@@ -21,7 +21,7 @@ import (
 )
 
 func (s *testSuite) TestCommitHandler(t *testing.T) {
-	repo, cli, m, cleanup := s.s.NewClient(t, "", nil, true)
+	repo, cli, m, cleanup := s.s.NewClient(t, "", true)
 	defer cleanup()
 	db := s.s.GetDB(repo)
 	rs := s.s.GetRS(repo)
@@ -126,7 +126,7 @@ func (s *testSuite) TestCommitHandler(t *testing.T) {
 }
 
 func (s *testSuite) TestPostCommitCallback(t *testing.T) {
-	repo, cli, _, cleanup := s.s.NewClient(t, "", nil, true)
+	repo, cli, _, cleanup := s.s.NewClient(t, "", true)
 	defer cleanup()
 	var com = &objects.Commit{}
 	head := testutils.BrokenRandomLowerAlphaString(6)
@@ -169,7 +169,7 @@ func (s *testSuite) TestPostCommitCallback(t *testing.T) {
 }
 
 func (s *testSuite) TestCommitGzip(t *testing.T) {
-	_, cli, _, cleanup := s.s.NewClient(t, "", nil, true)
+	_, cli, _, cleanup := s.s.NewClient(t, "", true)
 	defer cleanup()
 
 	buf := bytes.NewBuffer(nil)
@@ -191,7 +191,7 @@ func (s *testSuite) TestCommitGzip(t *testing.T) {
 }
 
 func (s *testSuite) TestCommitEmptyColumnName(t *testing.T) {
-	_, cli, _, cleanup := s.s.NewClient(t, "", nil, true)
+	_, cli, _, cleanup := s.s.NewClient(t, "", true)
 	defer cleanup()
 
 	buf := bytes.NewBuffer(nil)

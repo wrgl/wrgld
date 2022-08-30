@@ -74,7 +74,7 @@ func assertBlocksBinary(t *testing.T, db objects.Store, blocks [][]byte, resp *h
 }
 
 func (s *testSuite) TestGetBlocksHandler(t *testing.T) {
-	repo, cli, m, cleanup := s.s.NewClient(t, "", nil, true)
+	repo, cli, m, cleanup := s.s.NewClient(t, "", true)
 	defer cleanup()
 	db := s.s.GetDB(repo)
 

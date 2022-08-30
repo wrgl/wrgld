@@ -17,7 +17,7 @@ import (
 )
 
 func (s *testSuite) TestTransaction(t *testing.T) {
-	_, cli, _, cleanup := s.s.NewClient(t, "", nil, true)
+	_, cli, _, cleanup := s.s.NewClient(t, "", true)
 	defer cleanup()
 
 	ctr, err := cli.CreateTransaction(nil)

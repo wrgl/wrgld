@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 	apiclient "github.com/wrgl/wrgl/pkg/api/client"
 	"github.com/wrgl/wrgl/pkg/api/payload"
-	"github.com/wrgl/wrgl/pkg/auth"
 	"github.com/wrgl/wrgl/pkg/factory"
 	"github.com/wrgl/wrgl/pkg/ref"
 	"github.com/wrgl/wrgl/pkg/testutils"
@@ -23,7 +22,7 @@ import (
 func (s *testSuite) TestAuthenticate(t *testing.T) {
 	srv := server_testutils.NewServer(t, regexp.MustCompile(`^/my-repo/`))
 	defer srv.Close()
-	repo, cli, _, cleanup := srv.NewClient(t, "/my-repo/", regexp.MustCompile(`^/my-repo/`), false)
+	repo, cli, _, cleanup := srv.NewClient(t, "/my-repo/", false)
 	defer cleanup()
 	db := srv.GetDB(repo)
 	rs := srv.GetRS(repo)
@@ -104,7 +103,7 @@ func (s *testSuite) TestAuthenticate(t *testing.T) {
 	assert.Error(t, err)
 
 	// only read actions come through
-	readTok := s.s.Authorize(t, email, name, auth.ScopeRepoRead)
+	readTok := s.s.Authorize(t, email, name, "read")
 	_, err = cli.Commit("alpha", "initial commit", "file.csv", bytes.NewReader(buf.Bytes()), nil, nil, apiclient.WithRequestAuthorization(readTok))
 	assert.Error(t, err)
 	gcr, err := cli.GetCommit(sum2, apiclient.WithRequestAuthorization(readTok))
@@ -151,7 +150,7 @@ func (s *testSuite) TestAuthenticate(t *testing.T) {
 	assert.Error(t, err)
 
 	// now write actions come through as well
-	writeTok := s.s.Authorize(t, email, name, auth.ScopeRepoRead, auth.ScopeRepoWrite)
+	writeTok := s.s.Authorize(t, email, name, "read", "write")
 	cr, err := cli.Commit("alpha", "initial commit", "file.csv", bytes.NewReader(buf.Bytes()), nil, nil, apiclient.WithRequestAuthorization(writeTok))
 	require.NoError(t, err)
 	assert.NotEmpty(t, cr.Sum)

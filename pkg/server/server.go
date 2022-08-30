@@ -17,6 +17,46 @@ import (
 	"github.com/wrgl/wrgl/pkg/sorter"
 )
 
+var (
+	patRefs         *regexp.Regexp
+	patHead         *regexp.Regexp
+	patUploadPack   *regexp.Regexp
+	patReceivePack  *regexp.Regexp
+	patCommits      *regexp.Regexp
+	patSum          *regexp.Regexp
+	patProfile      *regexp.Regexp
+	patTables       *regexp.Regexp
+	patBlocks       *regexp.Regexp
+	patRows         *regexp.Regexp
+	patDiff         *regexp.Regexp
+	patRootedBlocks *regexp.Regexp
+	patRootedRows   *regexp.Regexp
+	patObjects      *regexp.Regexp
+	patTransactions *regexp.Regexp
+	patUUID         *regexp.Regexp
+	patGC           *regexp.Regexp
+)
+
+func init() {
+	patRefs = regexp.MustCompile(`^/refs/`)
+	patHead = regexp.MustCompile(`^heads/[-_0-9a-zA-Z]+/`)
+	patUploadPack = regexp.MustCompile(`^/upload-pack/`)
+	patReceivePack = regexp.MustCompile(`^/receive-pack/`)
+	patCommits = regexp.MustCompile(`^/commits/`)
+	patRootedBlocks = regexp.MustCompile(`^/blocks/`)
+	patRootedRows = regexp.MustCompile(`^/rows/`)
+	patSum = regexp.MustCompile(`^[0-9a-f]{32}/`)
+	patTables = regexp.MustCompile(`^/tables/`)
+	patProfile = regexp.MustCompile(`^profile/`)
+	patBlocks = regexp.MustCompile(`^blocks/`)
+	patRows = regexp.MustCompile(`^rows/`)
+	patDiff = regexp.MustCompile(`^/diff/[0-9a-f]{32}/[0-9a-f]{32}/`)
+	patObjects = regexp.MustCompile(`^/objects/`)
+	patTransactions = regexp.MustCompile(`^/transactions/`)
+	patUUID = regexp.MustCompile(`^[0-9a-f-]+/`)
+	patGC = regexp.MustCompile(`^/gc/`)
+}
+
 type ServerOption func(s *Server)
 
 func WithPostCommitCallback(postCommit PostCommitHook) ServerOption {
@@ -50,7 +90,6 @@ type RPSessionStoreGetter func(r *http.Request) ReceivePackSessionStore
 type PostCommitHook func(r *http.Request, commit *objects.Commit, sum []byte, branch string, tid *uuid.UUID)
 
 type Server struct {
-	RootPath     *regexp.Regexp
 	getDB        ObjectsStoreGetter
 	getRS        RefStoreGetter
 	getConfS     ConfStoreGetter
@@ -74,7 +113,6 @@ func NewServer(
 	opts ...ServerOption,
 ) *Server {
 	s := &Server{
-		RootPath:     rootPath,
 		getDB:        getDB,
 		getRS:        getRS,
 		getConfS:     getConfS,

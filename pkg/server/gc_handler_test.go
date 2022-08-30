@@ -13,7 +13,7 @@ import (
 )
 
 func (s *testSuite) TestGCHandler(t *testing.T) {
-	repo, cli, _, cleanup := s.s.NewClient(t, "", nil, true)
+	repo, cli, _, cleanup := s.s.NewClient(t, "", true)
 	defer cleanup()
 	db := s.s.GetDB(repo)
 	rs := s.s.GetRS(repo)

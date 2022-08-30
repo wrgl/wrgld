@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"regexp"
 	"strings"
 	"sync"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/pckhoi/uma"
 	"github.com/stretchr/testify/require"
 	apiclient "github.com/wrgl/wrgl/pkg/api/client"
 	"github.com/wrgl/wrgl/pkg/auth"
@@ -22,6 +24,7 @@ import (
 	"github.com/wrgl/wrgl/pkg/ref"
 	refmock "github.com/wrgl/wrgl/pkg/ref/mock"
 	"github.com/wrgl/wrgl/pkg/testutils"
+	wrgldoapiserver "github.com/wrgl/wrgld/pkg/oapi/server"
 	"github.com/wrgl/wrgld/pkg/server"
 )
 
@@ -191,10 +194,10 @@ func (s *Server) Authorize(t *testing.T, email, name string, scopes ...string) (
 }
 
 func (s *Server) AdminToken(t *testing.T) (signedToken string) {
-	return s.Authorize(t, Email, Name, auth.ScopeRepoRead, auth.ScopeRepoWrite)
+	return s.Authorize(t, Email, Name, "read", "write")
 }
 
-func (s *Server) NewRemote(t *testing.T, pathPrefix string, pathPrefixRegexp *regexp.Regexp) (repo string, url string, m *RequestCaptureMiddleware, cleanup func()) {
+func (s *Server) NewRemote(t *testing.T, pathPrefix string) (repo string, uri string, m *RequestCaptureMiddleware, cleanup func()) {
 	t.Helper()
 	repo = testutils.BrokenRandomLowerAlphaString(6)
 	cs := s.GetConfS(repo)
@@ -212,6 +215,36 @@ func (s *Server) NewRemote(t *testing.T, pathPrefix string, pathPrefixRegexp *re
 			s.s.ServeHTTP(rw, r)
 		},
 	})
+	umaMan := wrgldoapiserver.UMAManager(uma.ManagerOptions{
+		GetBaseURL: func(r *http.Request) url.URL {
+			return url.URL{
+				Scheme: "http",
+				Host:   r.Host,
+				Path:   pathPrefix,
+			}
+		},
+		LocalEnforce: func(r *http.Request, resource uma.Resource, scopes []string) bool {
+			if s := r.Header.Get("Authorization"); s != "" {
+				claims := &Claims{}
+				_, err := jwt.ParseWithClaims(
+					strings.TrimPrefix(s, "Bearer "), claims,
+					func(t *jwt.Token) (interface{}, error) { return jwt.UnsafeAllowNoneSignatureType, nil },
+				)
+				require.NoError(t, err)
+			outer:
+				for _, scope := range scopes {
+					for _, s := range claims.Scopes {
+						if scope == s {
+							continue outer
+						}
+					}
+					return false
+				}
+				return true
+			}
+			return false
+		},
+	})
 	var handler http.Handler = ApplyMiddlewares(
 		m,
 		func(h http.Handler) http.Handler {
@@ -223,34 +256,15 @@ func (s *Server) NewRemote(t *testing.T, pathPrefix string, pathPrefixRegexp *re
 						func(t *jwt.Token) (interface{}, error) { return jwt.UnsafeAllowNoneSignatureType, nil },
 					)
 					require.NoError(t, err)
-					r = server.SetEmail(server.SetName(r, claims.Name), claims.Email)
+					r = server.SetAuthor(r, &server.Author{
+						Email: claims.Email,
+						Name:  claims.Name,
+					})
 				}
 				h.ServeHTTP(rw, r)
 			})
 		},
-		server.AuthorizeMiddleware(server.AuthzMiddlewareOptions{
-			RootPath: pathPrefixRegexp,
-			Enforce: func(r *http.Request, scope string) bool {
-				if s := r.Header.Get("Authorization"); s != "" {
-					claims := &Claims{}
-					_, err := jwt.ParseWithClaims(
-						strings.TrimPrefix(s, "Bearer "), claims,
-						func(t *jwt.Token) (interface{}, error) { return jwt.UnsafeAllowNoneSignatureType, nil },
-					)
-					require.NoError(t, err)
-					for _, a := range claims.Scopes {
-						if a == scope {
-							return true
-						}
-					}
-				}
-				return false
-			},
-			GetConfig: func(r *http.Request) *conf.Config {
-				c, _ := cs.Open()
-				return c
-			},
-		}),
+		umaMan.Middleware,
 	)
 	if pathPrefix != "" {
 		mux := http.NewServeMux()
@@ -261,9 +275,9 @@ func (s *Server) NewRemote(t *testing.T, pathPrefix string, pathPrefixRegexp *re
 	return repo, strings.TrimSuffix(ts.URL+pathPrefix, "/"), m, ts.Close
 }
 
-func (s *Server) NewClient(t *testing.T, pathPrefix string, pathPrefixRegexp *regexp.Regexp, authorized bool) (string, *apiclient.Client, *RequestCaptureMiddleware, func()) {
+func (s *Server) NewClient(t *testing.T, pathPrefix string, authorized bool) (string, *apiclient.Client, *RequestCaptureMiddleware, func()) {
 	t.Helper()
-	repo, url, m, cleanup := s.NewRemote(t, pathPrefix, pathPrefixRegexp)
+	repo, url, m, cleanup := s.NewRemote(t, pathPrefix)
 	var opts []apiclient.ClientOption
 	if authorized {
 		opts = append(opts, apiclient.WithAuthorization(s.AdminToken(t)))

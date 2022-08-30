@@ -19,8 +19,8 @@ import (
 )
 
 func (s *Server) handleCommit(rw http.ResponseWriter, r *http.Request) {
-	email := GetEmail(r)
-	if email == "" {
+	author := GetAuthor(r)
+	if author == nil {
 		SendHTTPError(rw, r, http.StatusUnauthorized)
 		return
 	}
@@ -105,13 +105,12 @@ func (s *Server) handleCommit(rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	name := GetName(r)
 	commit := &objects.Commit{
 		Table:       sum,
 		Message:     message,
 		Time:        time.Now(),
-		AuthorEmail: email,
-		AuthorName:  name,
+		AuthorEmail: author.Email,
+		AuthorName:  author.Name,
 	}
 	parent, _ := ref.GetHead(rs, branch)
 	if parent != nil {

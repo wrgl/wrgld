@@ -16,7 +16,7 @@ import (
 )
 
 func (s *testSuite) TestGetCommitHandler(t *testing.T) {
-	repo, cli, m, cleanup := s.s.NewClient(t, "", nil, true)
+	repo, cli, m, cleanup := s.s.NewClient(t, "", true)
 	defer cleanup()
 	db := s.s.GetDB(repo)
 	parent, _ := factory.CommitRandom(t, db, nil)
@@ -75,7 +75,7 @@ func (s *testSuite) TestGetCommitHandler(t *testing.T) {
 }
 
 func (s *testSuite) TestGetShallowCommit(t *testing.T) {
-	repo, cli, _, cleanup := s.s.NewClient(t, "", nil, true)
+	repo, cli, _, cleanup := s.s.NewClient(t, "", true)
 	defer cleanup()
 	db := s.s.GetDB(repo)
 	sum1, c1 := refhelpers.SaveTestCommit(t, db, nil)
