@@ -486,6 +486,30 @@ paths:
       summary: Receive updates
       security:
         - oidc: [write]
+  /authorization-server:
+    get:
+      operationId: getAuthorizationServer
+      summary: Return info on authorization server
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - issuer
+                  - type
+                properties:
+                  issuer:
+                    type: string
+                    description: URI of OpenIDConnect issuer
+                  type:
+                    type: string
+                    description: authorization server type
+                    enum:
+                      - keycloak
 components:
   securitySchemes:
     oidc:

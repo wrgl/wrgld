@@ -32,6 +32,13 @@ func (s *testSuite) TestAuthenticate(t *testing.T) {
 	email := "user@test.com"
 	name := "John Doe"
 
+	as, err := cli.GetAuthServer()
+	require.NoError(t, err)
+	assert.Equal(t, &payload.AuthServer{
+		Type:   "keycloak",
+		Issuer: "http://keycloak",
+	}, as)
+
 	tok := s.s.Authorize(t, email, name)
 
 	buf := bytes.NewBuffer(nil)
@@ -39,7 +46,7 @@ func (s *testSuite) TestAuthenticate(t *testing.T) {
 	require.NoError(t, w.WriteAll(testutils.BuildRawCSV(4, 4)))
 	w.Flush()
 	// nothing come through because user has no scope
-	_, err := cli.Commit("alpha", "initial commit", "file.csv", bytes.NewReader(buf.Bytes()), nil, nil)
+	_, err = cli.Commit("alpha", "initial commit", "file.csv", bytes.NewReader(buf.Bytes()), nil, nil)
 	assert.Error(t, err)
 	_, err = cli.Commit("alpha", "initial commit", "file.csv", bytes.NewReader(buf.Bytes()), nil, nil, apiclient.WithRequestAuthorization(tok))
 	assert.Error(t, err)

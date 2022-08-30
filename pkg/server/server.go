@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/wrgl/wrgl/pkg/api/payload"
 	apiutils "github.com/wrgl/wrgl/pkg/api/utils"
 	"github.com/wrgl/wrgl/pkg/conf"
 	"github.com/wrgl/wrgl/pkg/objects"
@@ -35,6 +36,7 @@ var (
 	patTransactions *regexp.Regexp
 	patUUID         *regexp.Regexp
 	patGC           *regexp.Regexp
+	patAuthServer   *regexp.Regexp
 )
 
 func init() {
@@ -55,6 +57,7 @@ func init() {
 	patTransactions = regexp.MustCompile(`^/transactions/`)
 	patUUID = regexp.MustCompile(`^[0-9a-f-]+/`)
 	patGC = regexp.MustCompile(`^/gc/`)
+	patAuthServer = regexp.MustCompile(`^/authorization-server/`)
 }
 
 type ServerOption func(s *Server)
@@ -77,48 +80,41 @@ func WithReceiverOptions(opts ...apiutils.ObjectReceiveOption) ServerOption {
 	}
 }
 
-type ObjectsStoreGetter func(r *http.Request) objects.Store
-
-type RefStoreGetter func(r *http.Request) ref.Store
-
-type ConfStoreGetter func(r *http.Request) conf.Store
-
-type UPSessionStoreGetter func(r *http.Request) UploadPackSessionStore
-
-type RPSessionStoreGetter func(r *http.Request) ReceivePackSessionStore
-
 type PostCommitHook func(r *http.Request, commit *objects.Commit, sum []byte, branch string, tid *uuid.UUID)
 
 type Server struct {
-	getDB        ObjectsStoreGetter
-	getRS        RefStoreGetter
-	getConfS     ConfStoreGetter
-	getUpSession UPSessionStoreGetter
-	getRPSession RPSessionStoreGetter
-	postCommit   PostCommitHook
-	router       *router.Router
-	maxAge       time.Duration
-	debugLogger  *log.Logger
-	sPool        *sync.Pool
-	receiverOpts []apiutils.ObjectReceiveOption
+	getDB         func(r *http.Request) objects.Store
+	getRS         func(r *http.Request) ref.Store
+	getConfS      func(r *http.Request) conf.Store
+	getUpSession  func(r *http.Request) UploadPackSessionStore
+	getRPSession  func(r *http.Request) ReceivePackSessionStore
+	getAuthServer func(r *http.Request) payload.AuthServer
+	postCommit    PostCommitHook
+	router        *router.Router
+	maxAge        time.Duration
+	debugLogger   *log.Logger
+	sPool         *sync.Pool
+	receiverOpts  []apiutils.ObjectReceiveOption
 }
 
 func NewServer(
 	rootPath *regexp.Regexp,
-	getDB ObjectsStoreGetter,
-	getRS RefStoreGetter,
-	getConfS ConfStoreGetter,
-	getUpSession UPSessionStoreGetter,
-	getRPSession RPSessionStoreGetter,
+	getDB func(r *http.Request) objects.Store,
+	getRS func(r *http.Request) ref.Store,
+	getConfS func(r *http.Request) conf.Store,
+	getUpSession func(r *http.Request) UploadPackSessionStore,
+	getRPSession func(r *http.Request) ReceivePackSessionStore,
+	getAuthServer func(r *http.Request) payload.AuthServer,
 	opts ...ServerOption,
 ) *Server {
 	s := &Server{
-		getDB:        getDB,
-		getRS:        getRS,
-		getConfS:     getConfS,
-		getUpSession: getUpSession,
-		getRPSession: getRPSession,
-		maxAge:       90 * 24 * time.Hour,
+		getDB:         getDB,
+		getRS:         getRS,
+		getConfS:      getConfS,
+		getUpSession:  getUpSession,
+		getRPSession:  getRPSession,
+		getAuthServer: getAuthServer,
+		maxAge:        90 * 24 * time.Hour,
 		sPool: &sync.Pool{
 			New: func() interface{} {
 				s, err := sorter.NewSorter(sorter.WithRunSize(8 * 1024 * 1024))
@@ -247,6 +243,11 @@ func NewServer(
 				Method:      http.MethodGet,
 				Pat:         patDiff,
 				HandlerFunc: s.handleDiff,
+			},
+			{
+				Method:      http.MethodGet,
+				Pat:         patAuthServer,
+				HandlerFunc: s.handleGetAuthServer,
 			},
 		},
 	})

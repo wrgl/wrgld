@@ -15,6 +15,7 @@ import (
 	"github.com/pckhoi/uma"
 	"github.com/stretchr/testify/require"
 	apiclient "github.com/wrgl/wrgl/pkg/api/client"
+	"github.com/wrgl/wrgl/pkg/api/payload"
 	"github.com/wrgl/wrgl/pkg/auth"
 	authtest "github.com/wrgl/wrgl/pkg/auth/test"
 	"github.com/wrgl/wrgl/pkg/conf"
@@ -111,6 +112,12 @@ func NewServer(t *testing.T, rootPath *regexp.Regexp, opts ...server.ServerOptio
 		},
 		func(r *http.Request) server.ReceivePackSessionStore {
 			return ts.GetRpSessions(getRepo(r))
+		},
+		func(r *http.Request) payload.AuthServer {
+			return payload.AuthServer{
+				Type:   "keycloak",
+				Issuer: "http://keycloak",
+			}
 		},
 		opts...,
 	)
