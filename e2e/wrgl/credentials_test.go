@@ -58,7 +58,7 @@ func TestCredAuthCmd(t *testing.T) {
 
 	rd, cleanUp := createRepoDir(t)
 	defer cleanUp()
-	ts := newTestServer(t, rd, "testdata/go-vcr/testCredAuth", true)
+	ts := newTestServer(t, rd, "testdata/go-vcr/testCredAuth", false)
 	defer ts.Stop(t)
 
 	cmd := rootCmd()
@@ -66,6 +66,7 @@ func TestCredAuthCmd(t *testing.T) {
 	require.NoError(t, cmd.Execute())
 
 	ts.TryAuthenticateCommand(t, "origin")
+	rpt := ts.GetCurrentToken(t)
 
 	cmd = rootCmd()
 	cmd.SetArgs([]string{"credentials", "list"})
@@ -83,8 +84,10 @@ func TestCredAuthCmd(t *testing.T) {
 	assertCmdOutput(t, cmd, "")
 
 	tokFile := filepath.Join(t.TempDir(), "tok.txt")
-	require.NoError(t, os.WriteFile(tokFile, []byte(ts.GetCurrentToken(t)), 0644))
-	ts.TryAuthenticateCommand(t, ts.URL, "--token-location", tokFile)
+	require.NoError(t, os.WriteFile(tokFile, []byte(rpt), 0644))
+	cmd = rootCmd()
+	cmd.SetArgs([]string{"credentials", "authenticate", ts.URL, "--token-location", tokFile})
+	require.NoError(t, cmd.Execute())
 
 	cmd = rootCmd()
 	cmd.SetArgs([]string{"credentials", "list"})

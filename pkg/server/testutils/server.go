@@ -16,7 +16,6 @@ import (
 	"github.com/pckhoi/uma"
 	"github.com/stretchr/testify/require"
 	apiclient "github.com/wrgl/wrgl/pkg/api/client"
-	"github.com/wrgl/wrgl/pkg/api/payload"
 	"github.com/wrgl/wrgl/pkg/auth"
 	authtest "github.com/wrgl/wrgl/pkg/auth/test"
 	"github.com/wrgl/wrgl/pkg/conf"
@@ -87,19 +86,6 @@ func (s *Server) Close() {
 	wg.Wait()
 }
 
-type authServerKey struct{}
-
-func setAuthServer(r *http.Request, as *payload.AuthServer) *http.Request {
-	return r.WithContext(context.WithValue(r.Context(), authServerKey{}, as))
-}
-
-func getAuthServer(r *http.Request) *payload.AuthServer {
-	if v := r.Context().Value(authServerKey{}); v != nil {
-		return v.(*payload.AuthServer)
-	}
-	return nil
-}
-
 func NewServer(t *testing.T, rootPath *regexp.Regexp, opts ...server.ServerOption) *Server {
 	ts := &Server{
 		db:         map[string]objects.Store{},
@@ -126,10 +112,6 @@ func NewServer(t *testing.T, rootPath *regexp.Regexp, opts ...server.ServerOptio
 		},
 		func(r *http.Request) server.ReceivePackSessionStore {
 			return ts.GetRpSessions(getRepo(r))
-		},
-		func(r *http.Request) payload.AuthServer {
-			as := getAuthServer(r)
-			return *as
 		},
 		opts...,
 	)
@@ -276,10 +258,6 @@ func (s *Server) NewKeycloakedRemote(t *testing.T, pathPrefix, issuer, clientID,
 		umaMan.Middleware,
 		func(h http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				r = setAuthServer(r, &payload.AuthServer{
-					Type:   "keycloak",
-					Issuer: issuer,
-				})
 				claims := uma.GetClaims(r)
 				if claims != nil {
 					r = server.SetAuthor(r, &server.Author{
@@ -357,10 +335,6 @@ func (s *Server) NewRemote(t *testing.T, pathPrefix string) (repo string, uri st
 		m,
 		func(h http.Handler) http.Handler {
 			return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-				r = setAuthServer(r, &payload.AuthServer{
-					Type:   "keycloak",
-					Issuer: "http://keycloak",
-				})
 				if s := r.Header.Get("Authorization"); s != "" {
 					claims := &Claims{}
 					_, err := jwt.ParseWithClaims(

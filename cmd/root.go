@@ -103,7 +103,7 @@ func RootCmd() *cobra.Command {
 					Transport: transport,
 				}
 			}
-			server, err := NewServer(rd, client)
+			server, _, _, err := NewServer(rd, client)
 			if err != nil {
 				return
 			}

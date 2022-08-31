@@ -9,7 +9,6 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/pckhoi/uma"
-	"github.com/wrgl/wrgl/pkg/api/payload"
 	"github.com/wrgl/wrgl/pkg/conf"
 	conffs "github.com/wrgl/wrgl/pkg/conf/fs"
 	"github.com/wrgl/wrgl/pkg/local"
@@ -38,16 +37,16 @@ type Server struct {
 	rpSessions *server.ReceivePackSessionMap
 }
 
-func NewServer(rd *local.RepoDir, client *http.Client) (*Server, error) {
+func NewServer(rd *local.RepoDir, client *http.Client) (*Server, *uma.KeycloakProvider, string, error) {
 	objstore, err := rd.OpenObjectsStore()
 	if err != nil {
-		return nil, err
+		return nil, nil, "", err
 	}
 	refstore := rd.OpenRefStore()
 	cs := conffs.NewStore(rd.FullPath, conffs.AggregateSource, "")
 	c, err := cs.Open()
 	if err != nil {
-		return nil, err
+		return nil, nil, "", err
 	}
 	s := &Server{
 		upSessions: server.NewUploadPackSessionMap(0, 0),
@@ -58,10 +57,10 @@ func NewServer(rd *local.RepoDir, client *http.Client) (*Server, error) {
 		},
 	}
 	if c.Auth == nil || c.Auth.Keycloak == nil {
-		return nil, fmt.Errorf("auth config not defined")
+		return nil, nil, "", fmt.Errorf("auth config not defined")
 	}
 	if c.Auth.RepositoryName == "" {
-		return nil, fmt.Errorf("auth.repositoryName not defined")
+		return nil, nil, "", fmt.Errorf("auth.repositoryName not defined")
 	}
 	rs := rd.OpenUMAStore()
 	kc := c.Auth.Keycloak
@@ -81,11 +80,11 @@ func NewServer(rd *local.RepoDir, client *http.Client) (*Server, error) {
 		opts...,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, "", err
 	}
 	baseURL, err := url.Parse(c.BaseURL)
 	if err != nil {
-		return nil, err
+		return nil, nil, "", err
 	}
 	manOpts := &uma.ManagerOptions{
 		GetBaseURL: func(r *http.Request) url.URL {
@@ -106,10 +105,11 @@ func NewServer(rd *local.RepoDir, client *http.Client) (*Server, error) {
 	var resourceID string
 	resourceID, err = rs.Get(c.Auth.RepositoryName)
 	if err != nil {
-		_, err := umaMan.RegisterResourceAt(rs, kp, *baseURL, "/refs")
+		resp, err := umaMan.RegisterResourceAt(rs, kp, *baseURL, "/refs")
 		if err != nil {
-			return nil, err
+			return nil, nil, "", err
 		}
+		resourceID = resp.ID
 	}
 	var handler http.Handler = server.NewServer(
 		nil,
@@ -118,14 +118,6 @@ func NewServer(rd *local.RepoDir, client *http.Client) (*Server, error) {
 		func(r *http.Request) conf.Store { return cs },
 		func(r *http.Request) server.UploadPackSessionStore { return s.upSessions },
 		func(r *http.Request) server.ReceivePackSessionStore { return s.rpSessions },
-		func(r *http.Request) payload.AuthServer {
-			return payload.AuthServer{
-				Type:       "keycloak",
-				Issuer:     c.Auth.Keycloak.Issuer,
-				ResourceID: resourceID,
-				Audience:   kc.ClientID,
-			}
-		},
 	)
 	s.handler = wrgldutils.ApplyMiddlewares(
 		handler,
@@ -133,7 +125,7 @@ func NewServer(rd *local.RepoDir, client *http.Client) (*Server, error) {
 		LoggingMiddleware,
 		RecoveryMiddleware,
 	)
-	return s, nil
+	return s, kp, resourceID, nil
 }
 
 func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {

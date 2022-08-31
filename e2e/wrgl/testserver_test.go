@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/pckhoi/uma"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 	"github.com/wrgl/wrgl/cmd/wrgl"
@@ -64,9 +65,24 @@ func newTestServer(t *testing.T, rd *local.RepoDir, cassetteName string, updateV
 	ts := httptest.NewServer(handler)
 	c.BaseURL = ts.URL
 	require.NoError(t, cs.Save(c))
-	srv, err := wrgldcmd.NewServer(rd, rec.GetDefaultClient())
+	srv, kp, resourceID, err := wrgldcmd.NewServer(rd, rec.GetDefaultClient())
 	require.NoError(t, err)
 	handler.h = srv
+
+	_, err = kp.CreatePermissionForResource(resourceID, &uma.KcPermission{
+		Name:        "reader-read-" + resourceID,
+		Description: "reader can read",
+		Scopes:      []string{"read"},
+		Roles:       []string{"reader"},
+	})
+	require.NoError(t, err)
+	_, err = kp.CreatePermissionForResource(resourceID, &uma.KcPermission{
+		Name:        "writer-write-" + resourceID,
+		Description: "writer can write",
+		Scopes:      []string{"write"},
+		Roles:       []string{"writer"},
+	})
+	require.NoError(t, err)
 
 	return &testServer{
 		rec:       rec,
