@@ -3,18 +3,19 @@ package wrgld
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
+	"net/url"
 	"time"
 
-	authfs "github.com/wrgl/wrgl/pkg/auth/fs"
+	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/pckhoi/uma"
+	"github.com/wrgl/wrgl/pkg/api/payload"
 	"github.com/wrgl/wrgl/pkg/conf"
 	conffs "github.com/wrgl/wrgl/pkg/conf/fs"
 	"github.com/wrgl/wrgl/pkg/local"
 	"github.com/wrgl/wrgl/pkg/objects"
 	"github.com/wrgl/wrgl/pkg/ref"
-	authlocal "github.com/wrgl/wrgld/pkg/auth/local"
-	authoauth2 "github.com/wrgl/wrgld/pkg/auth/oauth2"
+	wrgldoapiserver "github.com/wrgl/wrgld/pkg/oapi/server"
 	"github.com/wrgl/wrgld/pkg/server"
 	wrgldutils "github.com/wrgl/wrgld/pkg/utils"
 )
@@ -31,13 +32,13 @@ type ServerOptions struct {
 }
 
 type Server struct {
-	srv        *http.Server
+	handler    http.Handler
 	cleanups   []func()
 	upSessions *server.UploadPackSessionMap
 	rpSessions *server.ReceivePackSessionMap
 }
 
-func NewServer(rd *local.RepoDir, readTimeout, writeTimeout time.Duration, client *http.Client) (*Server, error) {
+func NewServer(rd *local.RepoDir, client *http.Client) (*Server, error) {
 	objstore, err := rd.OpenObjectsStore()
 	if err != nil {
 		return nil, err
@@ -51,14 +52,64 @@ func NewServer(rd *local.RepoDir, readTimeout, writeTimeout time.Duration, clien
 	s := &Server{
 		upSessions: server.NewUploadPackSessionMap(0, 0),
 		rpSessions: server.NewReceivePackSessionMap(0, 0),
-		srv: &http.Server{
-			ReadTimeout:  readTimeout,
-			WriteTimeout: writeTimeout,
-		},
 		cleanups: []func(){
 			func() { rd.Close() },
 			func() { objstore.Close() },
 		},
+	}
+	if c.Auth == nil || c.Auth.Keycloak == nil {
+		return nil, fmt.Errorf("auth config not defined")
+	}
+	if c.Auth.RepositoryName == "" {
+		return nil, fmt.Errorf("auth.repositoryName not defined")
+	}
+	rs := rd.OpenUMAStore()
+	kc := c.Auth.Keycloak
+	ctx := context.Background()
+	opts := []uma.KeycloakOption{
+		uma.WithKeycloakOwnerManagedAccess(),
+	}
+	if client != nil {
+		ctx = oidc.ClientContext(ctx, client)
+		opts = append(opts, uma.WithKeycloakClient(client))
+	}
+	kp, err := uma.NewKeycloakProvider(
+		kc.Issuer,
+		kc.ClientID,
+		kc.ClientSecret,
+		oidc.NewRemoteKeySet(ctx, kc.Issuer+"/protocol/openid-connect/certs"),
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	baseURL, err := url.Parse(c.BaseURL)
+	if err != nil {
+		return nil, err
+	}
+	manOpts := &uma.ManagerOptions{
+		GetBaseURL: func(r *http.Request) url.URL {
+			return *baseURL
+		},
+		GetProvider: func(r *http.Request) uma.Provider {
+			return kp
+		},
+		GetResourceStore: func(r *http.Request) uma.ResourceStore {
+			return rs
+		},
+		GetResourceName: func(rsc uma.Resource) string {
+			return c.Auth.RepositoryName
+		},
+	}
+	umaMan := wrgldoapiserver.UMAManager(*manOpts)
+
+	var resourceID string
+	resourceID, err = rs.Get(c.Auth.RepositoryName)
+	if err != nil {
+		_, err := umaMan.RegisterResourceAt(rs, kp, *baseURL, "/refs")
+		if err != nil {
+			return nil, err
+		}
 	}
 	var handler http.Handler = server.NewServer(
 		nil,
@@ -67,62 +118,31 @@ func NewServer(rd *local.RepoDir, readTimeout, writeTimeout time.Duration, clien
 		func(r *http.Request) conf.Store { return cs },
 		func(r *http.Request) server.UploadPackSessionStore { return s.upSessions },
 		func(r *http.Request) server.ReceivePackSessionStore { return s.rpSessions },
+		func(r *http.Request) payload.AuthServer {
+			return payload.AuthServer{
+				Type:       "keycloak",
+				Issuer:     c.Auth.Keycloak.Issuer,
+				ResourceID: resourceID,
+				Audience:   kc.ClientID,
+			}
+		},
 	)
-	if c.Auth == nil {
-		return nil, fmt.Errorf("auth config not defined")
-	}
-	if c.Auth.Type == conf.ATLegacy {
-		authnS, err := authfs.NewAuthnStore(rd, c.TokenDuration())
-		if err != nil {
-			return nil, err
-		}
-		authzS, err := authfs.NewAuthzStore(rd)
-		if err != nil {
-			return nil, err
-		}
-		handler = authlocal.NewHandler(handler, c, authnS, authzS)
-		s.cleanups = append(s.cleanups,
-			func() { authnS.Close() },
-			func() { authzS.Close() },
-		)
-	} else {
-		if c == nil || c.Auth == nil || c.Auth.OAuth2 == nil {
-			return nil, fmt.Errorf("empty auth.oauth2 config")
-		}
-		if c.Auth.OAuth2.OIDCProvider == nil {
-			return nil, fmt.Errorf("empty auth.oauth2.oidcProvider config")
-		}
-		provider, err := authoauth2.NewOIDCProvider(c.Auth.OAuth2.OIDCProvider, client)
-		if err != nil {
-			return nil, err
-		}
-		handler, err = authoauth2.NewHandler(handler, c, provider)
-		if err != nil {
-			return nil, err
-		}
-	}
-	s.srv.Handler = wrgldutils.ApplyMiddlewares(
+	s.handler = wrgldutils.ApplyMiddlewares(
 		handler,
+		umaMan.Middleware,
 		LoggingMiddleware,
 		RecoveryMiddleware,
 	)
 	return s, nil
 }
 
-func (s *Server) Start(addr string) error {
-	s.srv.Addr = addr
-	log.Printf("server started at %s", addr)
-	return s.srv.ListenAndServe()
+func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+	s.handler.ServeHTTP(rw, r)
 }
 
 func (s *Server) Close() error {
 	s.upSessions.Stop()
 	s.rpSessions.Stop()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := s.srv.Shutdown(ctx); err != nil {
-		return err
-	}
 	for i := len(s.cleanups) - 1; i >= 0; i-- {
 		s.cleanups[i]()
 	}

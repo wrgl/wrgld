@@ -2,9 +2,6 @@ package e2e_wrgl_test
 
 import (
 	"bytes"
-	"context"
-	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,21 +11,11 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/wrgl/wrgl/cmd/wrgl"
-	"github.com/wrgl/wrgl/cmd/wrgl/utils"
 	confhelpers "github.com/wrgl/wrgl/pkg/conf/helpers"
 	"github.com/wrgl/wrgl/pkg/errors"
 	"github.com/wrgl/wrgl/pkg/local"
 	"github.com/wrgl/wrgl/pkg/testutils"
-	server_testutils "github.com/wrgl/wrgld/pkg/server/testutils"
 )
-
-func rootCmd() *cobra.Command {
-	cmd := wrgl.RootCmd()
-	cmd.SetOut(io.Discard)
-	cmd.SetErr(io.Discard)
-	return cmd
-}
 
 func createRepoDir(t *testing.T) (rd *local.RepoDir, cleanup func()) {
 	t.Helper()
@@ -68,33 +55,27 @@ func assertCmdFailed(t *testing.T, cmd *cobra.Command, output string, err error)
 
 func TestCredAuthCmd(t *testing.T) {
 	defer confhelpers.MockGlobalConf(t, true)()
-	ts := server_testutils.NewServer(t, nil)
-	defer ts.Close()
-	_, url, _, cleanup := ts.NewRemote(t, "", nil)
-	defer cleanup()
 
-	_, cleanUp := createRepoDir(t)
+	rd, cleanUp := createRepoDir(t)
 	defer cleanUp()
+	ts := newTestServer(t, rd, "testdata/go-vcr/testCredAuth", true)
+	defer ts.Stop(t)
 
 	cmd := rootCmd()
-	cmd.SetArgs([]string{"remote", "add", "origin", url})
+	cmd.SetArgs([]string{"remote", "add", "origin", ts.URL})
 	require.NoError(t, cmd.Execute())
 
-	cmd = rootCmd()
-	cmd.SetArgs([]string{"credentials", "authenticate", "origin"})
-	require.NoError(t, cmd.ExecuteContext(
-		utils.SetPromptValues(context.Background(), []string{server_testutils.Email, server_testutils.Password}),
-	))
+	ts.TryAuthenticateCommand(t, "origin")
 
 	cmd = rootCmd()
 	cmd.SetArgs([]string{"credentials", "list"})
 	assertCmdOutput(t, cmd, strings.Join([]string{
-		url,
+		ts.URL,
 		"",
 	}, "\n"))
 
 	cmd = rootCmd()
-	cmd.SetArgs([]string{"credentials", "remove", url})
+	cmd.SetArgs([]string{"credentials", "remove", ts.URL})
 	require.NoError(t, cmd.Execute())
 
 	cmd = rootCmd()
@@ -102,15 +83,13 @@ func TestCredAuthCmd(t *testing.T) {
 	assertCmdOutput(t, cmd, "")
 
 	tokFile := filepath.Join(t.TempDir(), "tok.txt")
-	require.NoError(t, ioutil.WriteFile(tokFile, []byte(ts.AdminToken(t)), 0644))
-	cmd = rootCmd()
-	cmd.SetArgs([]string{"credentials", "authenticate", url, "--token-location", tokFile})
-	require.NoError(t, cmd.Execute())
+	require.NoError(t, os.WriteFile(tokFile, []byte(ts.GetCurrentToken(t)), 0644))
+	ts.TryAuthenticateCommand(t, ts.URL, "--token-location", tokFile)
 
 	cmd = rootCmd()
 	cmd.SetArgs([]string{"credentials", "list"})
 	assertCmdOutput(t, cmd, strings.Join([]string{
-		url,
+		ts.URL,
 		"",
 	}, "\n"))
 }

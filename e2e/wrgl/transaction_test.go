@@ -223,7 +223,7 @@ func TestTransactionListCmd(t *testing.T) {
 	defer confhelpers.MockGlobalConf(t, true)()
 	ts := server_testutils.NewServer(t, nil)
 	defer ts.Close()
-	repo, url, _, cleanup := ts.NewRemote(t, "", nil)
+	repo, url, _, cleanup := ts.NewRemote(t, "")
 	defer cleanup()
 
 	rd, cleanup := createRepoDir(t)

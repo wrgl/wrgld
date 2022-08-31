@@ -1,6 +1,7 @@
 package wrgld
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
 	"log"
@@ -102,12 +103,19 @@ func RootCmd() *cobra.Command {
 					Transport: transport,
 				}
 			}
-			server, err := NewServer(rd, readTimeout, writeTimeout, client)
+			server, err := NewServer(rd, client)
 			if err != nil {
 				return
 			}
 			defer server.Close()
-			return server.Start(fmt.Sprintf(":%d", port))
+			srv := &http.Server{
+				ReadTimeout:  readTimeout,
+				WriteTimeout: writeTimeout,
+				Handler:      server,
+				Addr:         fmt.Sprintf(":%d", port),
+			}
+			defer srv.Shutdown(context.Background())
+			return srv.ListenAndServe()
 		},
 	}
 	cmd.Flags().IntP("port", "p", 80, "port number to listen to")

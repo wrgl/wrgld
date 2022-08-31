@@ -20,7 +20,7 @@ func TestShallowCommit(t *testing.T) {
 	defer confhelpers.MockGlobalConf(t, true)()
 	ts := server_testutils.NewServer(t, nil)
 	defer ts.Close()
-	repo, url, _, cleanup := ts.NewRemote(t, "", nil)
+	repo, url, _, cleanup := ts.NewRemote(t, "")
 	defer cleanup()
 	dbs := ts.GetDB(repo)
 	rss := ts.GetRS(repo)
@@ -137,7 +137,7 @@ func TestShallowCommit(t *testing.T) {
 	assert.Len(t, sl, 0)
 	require.NoError(t, db.Close())
 
-	repo2, url2, _, cleanup2 := ts.NewRemote(t, "", nil)
+	repo2, url2, _, cleanup2 := ts.NewRemote(t, "")
 	defer cleanup2()
 	dbs2 := ts.GetDB(repo2)
 	rss2 := ts.GetRS(repo2)
