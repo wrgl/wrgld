@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/golang-jwt/jwt"
 	"github.com/pckhoi/uma"
 	"github.com/stretchr/testify/require"
@@ -211,76 +210,6 @@ func (s mockResourceStore) Get(name string) (string, error) {
 		return "", nil
 	}
 	return id, nil
-}
-
-func (s *Server) NewKeycloakedRemote(t *testing.T, pathPrefix, issuer, clientID, clientSecret string, httpClient *http.Client) (repo, uri string, cleanup func()) {
-	t.Helper()
-	repo = testutils.BrokenRandomLowerAlphaString(6)
-	cs := s.GetConfS(repo)
-	c, err := cs.Open()
-	require.NoError(t, err)
-	c.User = &conf.User{
-		Email: Email,
-		Name:  Name,
-	}
-	require.NoError(t, cs.Save(c))
-	kp, err := uma.NewKeycloakProvider(
-		issuer,
-		clientID,
-		clientSecret,
-		oidc.NewRemoteKeySet(oidc.ClientContext(context.Background(), httpClient), issuer+"/protocol/openid-connect/certs"),
-		uma.WithKeycloakOwnerManagedAccess(),
-		uma.WithKeycloakClient(httpClient),
-	)
-	require.NoError(t, err)
-	baseURL := &url.URL{
-		Scheme: "http",
-		Path:   pathPrefix,
-	}
-	rs := make(mockResourceStore)
-	umaMan := wrgldoapiserver.UMAManager(uma.ManagerOptions{
-		GetBaseURL: func(r *http.Request) url.URL {
-			return *baseURL
-		},
-		GetProvider: func(r *http.Request) uma.Provider {
-			return kp
-		},
-		GetResourceStore: func(r *http.Request) uma.ResourceStore {
-			return rs
-		},
-		DisableTokenExpirationCheck: true,
-		GetResourceName: func(rsc uma.Resource) string {
-			return "Repository " + repo
-		},
-	})
-	var handler http.Handler = ApplyMiddlewares(
-		s.s,
-		umaMan.Middleware,
-		func(h http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				claims := uma.GetClaims(r)
-				if claims != nil {
-					r = server.SetAuthor(r, &server.Author{
-						Email: claims.Email,
-						Name:  claims.Name,
-					})
-				}
-				h.ServeHTTP(w, r)
-			})
-		},
-	)
-	if pathPrefix != "" {
-		mux := http.NewServeMux()
-		mux.Handle(pathPrefix, handler)
-		handler = mux
-	}
-	ts := httptest.NewServer(handler)
-	u, err := url.Parse(ts.URL)
-	require.NoError(t, err)
-	baseURL.Host = u.Host
-	_, err = umaMan.RegisterResourceAt(rs, kp, *baseURL, "/")
-	require.NoError(t, err)
-	return repo, strings.TrimSuffix(ts.URL+pathPrefix, "/"), ts.Close
 }
 
 func (s *Server) NewRemote(t *testing.T, pathPrefix string) (repo string, uri string, m *RequestCaptureMiddleware, cleanup func()) {
