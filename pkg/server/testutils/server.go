@@ -310,25 +310,39 @@ func (s *Server) NewRemote(t *testing.T, pathPrefix string) (repo string, uri st
 			}
 		},
 		LocalEnforce: func(r *http.Request, resource uma.Resource, scopes []string) bool {
-			if s := r.Header.Get("Authorization"); s != "" {
+			var existingScopes []string
+			if authHeader := r.Header.Get("Authorization"); authHeader != "" {
 				claims := &Claims{}
 				_, err := jwt.ParseWithClaims(
-					strings.TrimPrefix(s, "Bearer "), claims,
+					strings.TrimPrefix(authHeader, "Bearer "), claims,
 					func(t *jwt.Token) (interface{}, error) { return jwt.UnsafeAllowNoneSignatureType, nil },
 				)
 				require.NoError(t, err)
-			outer:
-				for _, scope := range scopes {
-					for _, s := range claims.Scopes {
-						if scope == s {
-							continue outer
-						}
-					}
+				existingScopes = claims.Scopes
+			} else {
+				cs := s.GetConfS(repo)
+				c, _ := cs.Open()
+				if c.Auth != nil && c.Auth.AnonymousRead {
+					existingScopes = []string{"read"}
+				} else {
 					return false
 				}
-				return true
 			}
-			return false
+		outer:
+			for _, scope := range scopes {
+				for _, s := range existingScopes {
+					if scope == s {
+						continue outer
+					}
+				}
+				return false
+			}
+			return true
+		},
+		EditUnauthorizedResponse: func(rw http.ResponseWriter) {
+			rw.Header().Add("Content-Type", "application/json")
+			rw.WriteHeader(http.StatusUnauthorized)
+			rw.Write([]byte(`{"message":"Unauthorized"}`))
 		},
 	})
 	var handler http.Handler = ApplyMiddlewares(

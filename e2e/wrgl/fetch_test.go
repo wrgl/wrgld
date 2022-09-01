@@ -71,7 +71,7 @@ func assertCmdUnauthorized(t *testing.T, cmd *cobra.Command, url string) {
 		"Run this command to authenticate:",
 		fmt.Sprintf("    wrgl credentials authenticate %s", url),
 		"",
-	}, "\n"), httpError(t, http.StatusForbidden, "Forbidden"))
+	}, "\n"), httpError(t, http.StatusUnauthorized, "Unauthorized"))
 }
 
 func TestFetchCmd(t *testing.T) {

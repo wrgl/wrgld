@@ -99,6 +99,16 @@ func NewServer(rd *local.RepoDir, client *http.Client) (*Server, *uma.KeycloakPr
 		GetResourceName: func(rsc uma.Resource) string {
 			return c.Auth.RepositoryName
 		},
+		EditUnauthorizedResponse: func(rw http.ResponseWriter) {
+			rw.Header().Add("Content-Type", "application/json")
+			rw.WriteHeader(http.StatusUnauthorized)
+			rw.Write([]byte(`{"message":"Unauthorized"}`))
+		},
+	}
+	if c.Auth.AnonymousRead {
+		manOpts.AnonymousScopes = func(resource uma.Resource) (scopes []string) {
+			return []string{"read"}
+		}
 	}
 	umaMan := wrgldoapiserver.UMAManager(*manOpts)
 
