@@ -96,7 +96,7 @@ func NewServer(rd *local.RepoDir, client *http.Client) (*Server, *uma.KeycloakPr
 		GetResourceStore: func(r *http.Request) uma.ResourceStore {
 			return rs
 		},
-		GetResourceName: func(rsc uma.Resource) string {
+		GetResourceName: func(r *http.Request, rsc uma.Resource) string {
 			return c.Auth.RepositoryName
 		},
 		EditUnauthorizedResponse: func(rw http.ResponseWriter) {
@@ -106,7 +106,7 @@ func NewServer(rd *local.RepoDir, client *http.Client) (*Server, *uma.KeycloakPr
 		},
 	}
 	if c.Auth.AnonymousRead {
-		manOpts.AnonymousScopes = func(resource uma.Resource) (scopes []string) {
+		manOpts.AnonymousScopes = func(r *http.Request, resource uma.Resource) (scopes []string) {
 			return []string{"read"}
 		}
 	}
@@ -115,7 +115,7 @@ func NewServer(rd *local.RepoDir, client *http.Client) (*Server, *uma.KeycloakPr
 	var resourceID string
 	resourceID, err = rs.Get(c.Auth.RepositoryName)
 	if err != nil {
-		resp, err := umaMan.RegisterResourceAt(rs, kp, *baseURL, "/refs")
+		resp, err := umaMan.RegisterResourceAt(nil, rs, kp, *baseURL, "/refs")
 		if err != nil {
 			return nil, nil, "", err
 		}
