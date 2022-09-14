@@ -4,7 +4,8 @@ import (
 	"github.com/pckhoi/uma"
 )
 
-var umaResourceTypes = map[string]uma.ResourceType{
+// UMAResourceTypes is a map of defined resource types
+var UMAResourceTypes = map[string]uma.ResourceType{
 	"https://www.wrgl.co/rsrcs/repository": {
 		Type:           "https://www.wrgl.co/rsrcs/repository",
 		Description:    "A Wrgl repository",
@@ -25,8 +26,8 @@ var umaDefaultSecurity uma.Security = []map[string][]string{
 	},
 }
 
-var umaPaths uma.Paths = []uma.Path{
-	uma.NewPath("/transactions", nil, map[string]uma.Operation{
+var umaPaths = []uma.Path{
+	uma.NewPath("/gc", nil, map[string]uma.Operation{
 		"POST": {
 			Security: []map[string][]string{
 				{
@@ -38,66 +39,14 @@ var umaPaths uma.Paths = []uma.Path{
 	uma.NewPath("/refs", nil, map[string]uma.Operation{
 		"GET": {},
 	}),
-	uma.NewPath("/tables/{hash}", nil, map[string]uma.Operation{
-		"GET": {},
-	}),
-	uma.NewPath("/tables/{hash}/profile", nil, map[string]uma.Operation{
+	uma.NewPath("/rows", nil, map[string]uma.Operation{
 		"GET": {},
 	}),
 	uma.NewPath("/blocks", nil, map[string]uma.Operation{
 		"GET": {},
 	}),
-	uma.NewPath("/receive-pack", nil, map[string]uma.Operation{
-		"POST": {
-			Security: []map[string][]string{
-				{
-					"oidc": {"write"},
-				},
-			},
-		},
-	}),
-	uma.NewPath("/refs/heads/{branch}", nil, map[string]uma.Operation{
-		"GET": {},
-	}),
 	uma.NewPath("/commits", nil, map[string]uma.Operation{
 		"GET": {},
-		"POST": {
-			Security: []map[string][]string{
-				{
-					"oidc": {"write"},
-				},
-			},
-		},
-	}),
-	uma.NewPath("/tables/{hash}/blocks", nil, map[string]uma.Operation{
-		"GET": {},
-	}),
-	uma.NewPath("/tables/{hash}/rows", nil, map[string]uma.Operation{
-		"GET": {},
-	}),
-	uma.NewPath("/rows", nil, map[string]uma.Operation{
-		"GET": {},
-	}),
-	uma.NewPath("/transactions/{id}", nil, map[string]uma.Operation{
-		"GET": {},
-		"POST": {
-			Security: []map[string][]string{
-				{
-					"oidc": {"write"},
-				},
-			},
-		},
-	}),
-	uma.NewPath("/commits/{hash}", nil, map[string]uma.Operation{
-		"GET": {},
-	}),
-	uma.NewPath("/commits/{hash}/profile", nil, map[string]uma.Operation{
-		"GET": {},
-	}),
-	uma.NewPath("/diff/{newCommitHash}/{oldCommitHash}", nil, map[string]uma.Operation{
-		"GET": {},
-	}),
-	uma.NewPath("/gc", nil, map[string]uma.Operation{
 		"POST": {
 			Security: []map[string][]string{
 				{
@@ -112,13 +61,65 @@ var umaPaths uma.Paths = []uma.Path{
 	uma.NewPath("/upload-pack", nil, map[string]uma.Operation{
 		"POST": {},
 	}),
+	uma.NewPath("/receive-pack", nil, map[string]uma.Operation{
+		"POST": {
+			Security: []map[string][]string{
+				{
+					"oidc": {"write"},
+				},
+			},
+		},
+	}),
+	uma.NewPath("/transactions", nil, map[string]uma.Operation{
+		"POST": {
+			Security: []map[string][]string{
+				{
+					"oidc": {"write"},
+				},
+			},
+		},
+	}),
+	uma.NewPath("/tables/{hash}", nil, map[string]uma.Operation{
+		"GET": {},
+	}),
+	uma.NewPath("/commits/{hash}", nil, map[string]uma.Operation{
+		"GET": {},
+	}),
+	uma.NewPath("/transactions/{id}", nil, map[string]uma.Operation{
+		"GET": {},
+		"POST": {
+			Security: []map[string][]string{
+				{
+					"oidc": {"write"},
+				},
+			},
+		},
+	}),
+	uma.NewPath("/tables/{hash}/rows", nil, map[string]uma.Operation{
+		"GET": {},
+	}),
+	uma.NewPath("/refs/heads/{branch}", nil, map[string]uma.Operation{
+		"GET": {},
+	}),
+	uma.NewPath("/tables/{hash}/blocks", nil, map[string]uma.Operation{
+		"GET": {},
+	}),
+	uma.NewPath("/tables/{hash}/profile", nil, map[string]uma.Operation{
+		"GET": {},
+	}),
+	uma.NewPath("/commits/{hash}/profile", nil, map[string]uma.Operation{
+		"GET": {},
+	}),
+	uma.NewPath("/diff/{newCommitHash}/{oldCommitHash}", nil, map[string]uma.Operation{
+		"GET": {},
+	}),
 }
 
 // UMAManager returns an uma.Manager instance configured according to OpenAPI schema
 func UMAManager(opts uma.ManagerOptions) *uma.Manager {
 	return uma.New(
 		opts,
-		umaResourceTypes,
+		UMAResourceTypes,
 		umaSecuritySchemes,
 		umaDefaultResource,
 		umaDefaultSecurity,
