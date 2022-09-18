@@ -2,7 +2,7 @@ package server
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -16,7 +16,7 @@ func parseJSONRequest(r *http.Request, rw http.ResponseWriter, obj interface{}) 
 		SendError(rw, r, http.StatusBadRequest, "JSON payload expected")
 		return false
 	}
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		panic(err)
 	}

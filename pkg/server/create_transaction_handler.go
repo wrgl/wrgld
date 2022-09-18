@@ -2,7 +2,7 @@ package server
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -17,7 +17,7 @@ func (s *Server) handleCreateTransaction(rw http.ResponseWriter, r *http.Request
 	rs := s.getRS(r)
 	if v := r.Header.Get("Content-Type"); strings.Contains(v, api.CTJSON) {
 		req := &payload.CreateTransactionRequest{}
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		if err != nil {
 			panic(err)
 		}

@@ -35,7 +35,6 @@ var (
 	patTransactions *regexp.Regexp
 	patUUID         *regexp.Regexp
 	patGC           *regexp.Regexp
-	patAuthServer   *regexp.Regexp
 )
 
 func init() {
@@ -56,7 +55,6 @@ func init() {
 	patTransactions = regexp.MustCompile(`^/transactions/`)
 	patUUID = regexp.MustCompile(`^[0-9a-f-]+/`)
 	patGC = regexp.MustCompile(`^/gc/`)
-	patAuthServer = regexp.MustCompile(`^/authorization-server/`)
 }
 
 type ServerOption func(s *Server)

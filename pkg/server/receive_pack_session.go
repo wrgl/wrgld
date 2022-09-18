@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -32,7 +31,7 @@ type ReceivePackSession struct {
 }
 
 func parseReceivePackRequest(r *http.Request) (req *payload.ReceivePackRequest, err error) {
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		return
 	}

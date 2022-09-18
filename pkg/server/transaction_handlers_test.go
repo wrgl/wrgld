@@ -3,7 +3,7 @@ package server_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -34,7 +34,7 @@ func (s *testSuite) TestTransaction(t *testing.T) {
 
 	resp, err := cli.Request(http.MethodGet, fmt.Sprintf("/transactions/%s/", tid), nil, nil)
 	require.NoError(t, err)
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	require.NoError(t, resp.Body.Close())
 	assert.NotContains(t, string(b), `"end"`)

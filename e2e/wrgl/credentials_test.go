@@ -65,7 +65,7 @@ func TestCredAuthCmd(t *testing.T) {
 	cmd.SetArgs([]string{"remote", "add", "origin", ts.URL})
 	require.NoError(t, cmd.Execute())
 
-	ts.TryAuthenticateCommand(t, "origin")
+	ts.RunAuthenticate(t, "credentials", "print", "origin")
 	rpt := ts.GetCurrentToken(t)
 
 	cmd = rootCmd()
@@ -86,7 +86,7 @@ func TestCredAuthCmd(t *testing.T) {
 	tokFile := filepath.Join(t.TempDir(), "tok.txt")
 	require.NoError(t, os.WriteFile(tokFile, []byte(rpt), 0644))
 	cmd = rootCmd()
-	cmd.SetArgs([]string{"credentials", "authenticate", ts.URL, "--token-location", tokFile})
+	cmd.SetArgs([]string{"credentials", "authenticate", ts.URL, tokFile})
 	require.NoError(t, cmd.Execute())
 
 	cmd = rootCmd()

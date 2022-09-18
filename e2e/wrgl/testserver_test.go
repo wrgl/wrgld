@@ -45,8 +45,12 @@ func newTestServer(t *testing.T, rd *local.RepoDir, cassetteName string, updateV
 		mode = recorder.ModeRecordOnly
 	}
 	rec, err := recorder.NewWithOptions(&recorder.Options{
-		CassetteName: cassetteName,
-		Mode:         mode,
+		CassetteName:       cassetteName,
+		Mode:               mode,
+		SkipRequestLatency: true,
+	})
+	rec.AddPassthrough(func(req *http.Request) bool {
+		return req.Host != "localhost:8080"
 	})
 	require.NoError(t, err)
 
@@ -101,12 +105,12 @@ func rootCmd() *cobra.Command {
 	return cmd
 }
 
-func (s *testServer) TryAuthenticateCommand(t *testing.T, args ...string) {
+func (s *testServer) RunAuthenticate(t *testing.T, args ...string) {
 	t.Helper()
 	cmd := rootCmd()
 	out := bytes.NewBuffer(nil)
 	cmd.SetOut(out)
-	cmd.SetArgs(append([]string{"credentials", "authenticate"}, args...))
+	cmd.SetArgs(args)
 	if s.updateVCR {
 		instrChan := readLoginInstruction(t, out)
 		go userVerify(t, instrChan)
@@ -120,7 +124,7 @@ func (s *testServer) GetCurrentToken(t *testing.T) []byte {
 	require.NoError(t, err)
 	u, err := url.Parse(s.URL)
 	require.NoError(t, err)
-	_, tok := cs.GetTokenMatching(*u)
+	tok := cs.GetTokenMatching(*u)
 	require.NotEmpty(t, tok)
 	return []byte(tok)
 }

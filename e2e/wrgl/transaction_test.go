@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
@@ -252,7 +251,7 @@ func TestTransactionListCmd(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	cmd.SetOut(buf)
 	require.NoError(t, cmd.Execute())
-	b, err := ioutil.ReadFile(fp)
+	b, err := os.ReadFile(fp)
 	require.NoError(t, err)
 	assert.Equal(t, b, buf.Bytes())
 

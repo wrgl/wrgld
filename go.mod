@@ -12,7 +12,7 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
-	github.com/wrgl/wrgl v0.12.1-0.20220913094007-6b5aaf921ad9
+	github.com/wrgl/wrgl v0.12.1-0.20220917100100-38f446a3e055
 	gopkg.in/dnaeon/go-vcr.v3 v3.1.0
 )
 

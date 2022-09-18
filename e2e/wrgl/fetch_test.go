@@ -67,9 +67,7 @@ func assertCmdUnauthorized(t *testing.T, cmd *cobra.Command, url string) {
 	assertCmdFailed(t, cmd, strings.Join([]string{
 		fmt.Sprintf("No credential found for %s", url),
 		"Proceed as anonymous user...",
-		"Unauthorized.",
-		"Run this command to authenticate:",
-		fmt.Sprintf("    wrgl credentials authenticate %s", url),
+		"Credentials are invalid",
 		"",
 	}, "\n"), httpError(t, http.StatusUnauthorized, "Unauthorized"))
 }

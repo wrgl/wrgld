@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"testing"
 
@@ -22,7 +21,7 @@ func decodeGzipPayload(header *http.Header, r io.ReadCloser) (io.ReadCloser, err
 		if err != nil {
 			return nil, err
 		}
-		b, err := ioutil.ReadAll(gzr)
+		b, err := io.ReadAll(gzr)
 		if err != nil {
 			return nil, err
 		}

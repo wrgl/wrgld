@@ -197,21 +197,6 @@ func (s *Server) AdminToken(t *testing.T) (signedToken string) {
 	return s.Authorize(t, Email, Name, "read", "write")
 }
 
-type mockResourceStore map[string]string
-
-func (s mockResourceStore) Set(name, id string) error {
-	s[name] = id
-	return nil
-}
-
-func (s mockResourceStore) Get(name string) (string, error) {
-	id, ok := s[name]
-	if !ok {
-		return "", nil
-	}
-	return id, nil
-}
-
 func (s *Server) NewRemote(t *testing.T, pathPrefix string) (repo string, uri string, m *RequestCaptureMiddleware, cleanup func()) {
 	t.Helper()
 	repo = testutils.BrokenRandomLowerAlphaString(6)
@@ -309,7 +294,7 @@ func (s *Server) NewClient(t *testing.T, pathPrefix string, authorized bool) (st
 	repo, url, m, cleanup := s.NewRemote(t, pathPrefix)
 	var opts []apiclient.ClientOption
 	if authorized {
-		opts = append(opts, apiclient.WithAuthorization(s.AdminToken(t)))
+		opts = append(opts, apiclient.WithRelyingPartyToken(s.AdminToken(t)))
 	}
 	cli, err := apiclient.NewClient(url, opts...)
 	require.NoError(t, err)
