@@ -2,12 +2,12 @@ package server
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
 	"sync"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	apiutils "github.com/wrgl/wrgl/pkg/api/utils"
 	"github.com/wrgl/wrgl/pkg/conf"
@@ -65,7 +65,7 @@ func WithPostCommitCallback(postCommit PostCommitHook) ServerOption {
 	}
 }
 
-func WithDebug(w *log.Logger) ServerOption {
+func WithDebug(w *logr.Logger) ServerOption {
 	return func(s *Server) {
 		s.debugLogger = w
 	}
@@ -88,7 +88,7 @@ type Server struct {
 	postCommit   PostCommitHook
 	router       *router.Router
 	maxAge       time.Duration
-	debugLogger  *log.Logger
+	debugLogger  *logr.Logger
 	sPool        *sync.Pool
 	receiverOpts []apiutils.ObjectReceiveOption
 }

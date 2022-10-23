@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/chromedp/chromedp v0.8.5
 	github.com/coreos/go-oidc/v3 v3.2.0
+	github.com/go-logr/logr v1.2.3
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/klauspost/compress v1.15.9
@@ -12,7 +13,7 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
-	github.com/wrgl/wrgl v0.12.1-0.20220917100100-38f446a3e055
+	github.com/wrgl/wrgl v0.12.1-0.20221023090738-20e27129953e
 	gopkg.in/dnaeon/go-vcr.v3 v3.1.0
 )
 
@@ -29,6 +30,7 @@ require (
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/gdamore/tcell/v2 v2.5.2 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
