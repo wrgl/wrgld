@@ -191,7 +191,7 @@ func (s *testSuite) TestCommitGzip(t *testing.T) {
 }
 
 func (s *testSuite) TestCommitEmptyColumnName(t *testing.T) {
-	_, cli, _, cleanup := s.s.NewClient(t, "", nil, true)
+	repo, cli, _, cleanup := s.s.NewClient(t, "", nil, true)
 	defer cleanup()
 
 	buf := bytes.NewBuffer(nil)
@@ -206,6 +206,11 @@ func (s *testSuite) TestCommitEmptyColumnName(t *testing.T) {
 	w.Flush()
 	require.NoError(t, gw.Flush())
 	require.NoError(t, gw.Close())
-	_, err := cli.Commit("alpha", "initial commit", "file.csv.gz", bytes.NewReader(buf.Bytes()), []string{"a"}, nil)
-	assert.Equal(t, `status 400: {"message":"ingest error: column name at position 1 is empty"}`, err.Error())
+	cr, err := cli.Commit("alpha", "initial commit", "file.csv.gz", bytes.NewReader(buf.Bytes()), []string{"a"}, nil)
+	require.NoError(t, err)
+	db := s.s.GetDB(repo)
+	defer db.Close()
+	tbl, err := objects.GetTable(db, (*cr.Table)[:])
+	require.NoError(t, err)
+	assert.Equal(t, []string{"a", "unnamed__1", "c"}, tbl.Columns)
 }
