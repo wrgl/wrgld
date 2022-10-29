@@ -294,6 +294,8 @@ github.com/wrgl/wrgl v0.12.1-0.20221023082804-88c9d54ed67f h1:LHJH3mVASE91tpO6tj
 github.com/wrgl/wrgl v0.12.1-0.20221023082804-88c9d54ed67f/go.mod h1:X5PCGVz0phKLZcDmFYSYHXavYAYrZ6SrAtphnMGKj54=
 github.com/wrgl/wrgl v0.12.1 h1:m8cKDWfX3CwL63uw7atQFA5LMp84rsSuwL9Bm00z8Yo=
 github.com/wrgl/wrgl v0.12.1/go.mod h1:X5PCGVz0phKLZcDmFYSYHXavYAYrZ6SrAtphnMGKj54=
+github.com/wrgl/wrgl v0.12.2 h1:NoWR6YNcR/xKbabAVKnzf7/uXewX5JTeHV/Lqy2Y850=
+github.com/wrgl/wrgl v0.12.2/go.mod h1:X5PCGVz0phKLZcDmFYSYHXavYAYrZ6SrAtphnMGKj54=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
