@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-logr/stdr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/wrgl/wrgl/pkg/conf"
@@ -103,7 +104,13 @@ func RootCmd() *cobra.Command {
 					Transport: transport,
 				}
 			}
-			server, _, _, err := NewServer(rd, client)
+			verbosity, err := cmd.LocalFlags().GetInt("log-verbosity")
+			if err != nil {
+				return
+			}
+			stdr.SetVerbosity(verbosity)
+			logger := stdr.New(log.Default())
+			server, _, _, err := NewServer(rd, client, logger, false)
 			if err != nil {
 				return
 			}
@@ -125,6 +132,7 @@ func RootCmd() *cobra.Command {
 	cmd.Flags().String("badger-log", "", `set Badger log level, valid options are "error", "warning", "debug", and "info" (defaults to "error")`)
 	cmd.Flags().Bool("init", false, "initialize repo at WRGL_DIR if not already initialized")
 	cmd.Flags().String("init-config-from", "", "initialize repo with initial config from this location")
+	cmd.Flags().Int("log-verbosity", 0, "verbosity level. Higher means more logs")
 	viper.BindPFlags(cmd.Flags())
 	viper.SetEnvPrefix("wrgld")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))

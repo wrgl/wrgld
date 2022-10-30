@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/go-logr/logr"
 	"github.com/pckhoi/uma"
 	"github.com/wrgl/wrgl/pkg/conf"
 	conffs "github.com/wrgl/wrgl/pkg/conf/fs"
@@ -37,7 +38,7 @@ type Server struct {
 	rpSessions *server.ReceivePackSessionMap
 }
 
-func NewServer(rd *local.RepoDir, client *http.Client) (*Server, *uma.KeycloakProvider, string, error) {
+func NewServer(rd *local.RepoDir, client *http.Client, logger logr.Logger, disableTokenExpirationCheck bool) (*Server, *uma.KeycloakProvider, string, error) {
 	objstore, err := rd.OpenObjectsStore()
 	if err != nil {
 		return nil, nil, "", err
@@ -86,6 +87,7 @@ func NewServer(rd *local.RepoDir, client *http.Client) (*Server, *uma.KeycloakPr
 	if err != nil {
 		return nil, nil, "", err
 	}
+	umaLogger := logger.WithName("uma").V(1)
 	manOpts := &uma.ManagerOptions{
 		GetBaseURL: func(r *http.Request) url.URL {
 			return *baseURL
@@ -104,6 +106,8 @@ func NewServer(rd *local.RepoDir, client *http.Client) (*Server, *uma.KeycloakPr
 			rw.WriteHeader(http.StatusUnauthorized)
 			rw.Write([]byte(`{"message":"Unauthorized"}`))
 		},
+		Logger:                      &umaLogger,
+		DisableTokenExpirationCheck: disableTokenExpirationCheck,
 	}
 	if c.Auth.AnonymousRead {
 		manOpts.AnonymousScopes = func(r *http.Request, resource uma.Resource) (scopes []string) {
@@ -132,8 +136,8 @@ func NewServer(rd *local.RepoDir, client *http.Client) (*Server, *uma.KeycloakPr
 	s.handler = wrgldutils.ApplyMiddlewares(
 		handler,
 		umaMan.Middleware,
-		LoggingMiddleware,
-		RecoveryMiddleware,
+		LoggingMiddleware(logger),
+		RecoveryMiddleware(logger),
 	)
 	return s, kp, resourceID, nil
 }

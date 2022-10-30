@@ -55,12 +55,7 @@ func getRepo(r *http.Request) string {
 }
 
 type Server struct {
-	dbMx       sync.Mutex
-	rsMx       sync.Mutex
-	azMx       sync.Mutex
-	cMx        sync.Mutex
-	upMx       sync.Mutex
-	rpMx       sync.Mutex
+	mx         sync.Mutex
 	db         map[string]objects.Store
 	rs         map[string]ref.Store
 	authzS     map[string]auth.AuthzStore
@@ -118,8 +113,8 @@ func NewServer(t *testing.T, rootPath *regexp.Regexp, opts ...server.ServerOptio
 }
 
 func (s *Server) GetAuthzS(repo string) auth.AuthzStore {
-	s.azMx.Lock()
-	defer s.azMx.Unlock()
+	s.mx.Lock()
+	defer s.mx.Unlock()
 	if _, ok := s.authzS[repo]; !ok {
 		s.authzS[repo] = authtest.NewAuthzStore()
 	}
@@ -127,8 +122,8 @@ func (s *Server) GetAuthzS(repo string) auth.AuthzStore {
 }
 
 func (s *Server) GetDB(repo string) objects.Store {
-	s.dbMx.Lock()
-	defer s.dbMx.Unlock()
+	s.mx.Lock()
+	defer s.mx.Unlock()
 	if _, ok := s.db[repo]; !ok {
 		db := objmock.NewStore()
 		s.db[repo] = db
@@ -140,8 +135,8 @@ func (s *Server) GetDB(repo string) objects.Store {
 }
 
 func (s *Server) GetRS(repo string) ref.Store {
-	s.rsMx.Lock()
-	defer s.rsMx.Unlock()
+	s.mx.Lock()
+	defer s.mx.Unlock()
 	if _, ok := s.rs[repo]; !ok {
 		var cleanup func()
 		s.rs[repo], cleanup = refmock.NewStore(s.T)
@@ -151,8 +146,8 @@ func (s *Server) GetRS(repo string) ref.Store {
 }
 
 func (s *Server) GetConfS(repo string) conf.Store {
-	s.cMx.Lock()
-	defer s.cMx.Unlock()
+	s.mx.Lock()
+	defer s.mx.Unlock()
 	if _, ok := s.confS[repo]; !ok {
 		s.confS[repo] = &confmock.Store{}
 	}
@@ -160,8 +155,8 @@ func (s *Server) GetConfS(repo string) conf.Store {
 }
 
 func (s *Server) GetUpSessions(repo string) server.UploadPackSessionStore {
-	s.upMx.Lock()
-	defer s.upMx.Unlock()
+	s.mx.Lock()
+	defer s.mx.Unlock()
 	if _, ok := s.upSessions[repo]; !ok {
 		ses := server.NewUploadPackSessionMap(100*time.Millisecond, 0)
 		s.upSessions[repo] = ses
@@ -171,8 +166,8 @@ func (s *Server) GetUpSessions(repo string) server.UploadPackSessionStore {
 }
 
 func (s *Server) GetRpSessions(repo string) server.ReceivePackSessionStore {
-	s.rpMx.Lock()
-	defer s.rpMx.Unlock()
+	s.mx.Lock()
+	defer s.mx.Unlock()
 	if _, ok := s.rpSessions[repo]; !ok {
 		ses := server.NewReceivePackSessionMap(100*time.Millisecond, 0)
 		s.rpSessions[repo] = ses
@@ -223,7 +218,7 @@ func (s *Server) NewRemote(t *testing.T, pathPrefix string) (repo string, uri st
 				Path:   pathPrefix,
 			}
 		},
-		LocalEnforce: func(r *http.Request, resource uma.Resource, scopes []string) bool {
+		CustomEnforce: func(r *http.Request, resource uma.Resource, scopes []string) bool {
 			var existingScopes []string
 			if authHeader := r.Header.Get("Authorization"); authHeader != "" {
 				claims := &Claims{}

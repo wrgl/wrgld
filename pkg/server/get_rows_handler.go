@@ -47,6 +47,9 @@ func (s *Server) transferRows(rw http.ResponseWriter, r *http.Request, db object
 		url := &url.URL{}
 		*url = *r.URL
 		url.Path = fmt.Sprintf("/tables/%x/blocks/", sum)
+		q := r.URL.Query()
+		q.Del("head")
+		url.RawQuery = q.Encode()
 		http.Redirect(rw, r, url.String(), http.StatusTemporaryRedirect)
 		return
 	}

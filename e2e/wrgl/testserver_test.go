@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/go-logr/logr/testr"
 	"github.com/pckhoi/uma"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
@@ -45,14 +46,14 @@ func newTestServer(t *testing.T, rd *local.RepoDir, cassetteName string, updateV
 		mode = recorder.ModeRecordOnly
 	}
 	rec, err := recorder.NewWithOptions(&recorder.Options{
-		CassetteName:       cassetteName,
+		CassetteName:       "testdata/go-vcr/" + cassetteName,
 		Mode:               mode,
 		SkipRequestLatency: true,
 	})
+	require.NoError(t, err)
 	rec.AddPassthrough(func(req *http.Request) bool {
 		return req.Host != "localhost:8080"
 	})
-	require.NoError(t, err)
 
 	cs := conffs.NewStore(rd.FullPath, conffs.LocalSource, "")
 	c, err := cs.Open()
@@ -69,7 +70,10 @@ func newTestServer(t *testing.T, rd *local.RepoDir, cassetteName string, updateV
 	ts := httptest.NewServer(handler)
 	c.BaseURL = ts.URL
 	require.NoError(t, cs.Save(c))
-	srv, kp, resourceID, err := wrgldcmd.NewServer(rd, rec.GetDefaultClient())
+	logger := testr.NewWithOptions(t, testr.Options{
+		Verbosity: 1,
+	})
+	srv, kp, resourceID, err := wrgldcmd.NewServer(rd, rec.GetDefaultClient(), logger, true)
 	require.NoError(t, err)
 	handler.h = srv
 
@@ -115,7 +119,13 @@ func (s *testServer) RunAuthenticate(t *testing.T, args ...string) {
 		instrChan := readLoginInstruction(t, out)
 		go userVerify(t, instrChan)
 	}
-	require.NoError(t, cmd.ExecuteContext(utils.SetClient(context.Background(), s.Client)))
+	logger := testr.NewWithOptions(t, testr.Options{
+		Verbosity: 1,
+	})
+	require.NoError(t, cmd.ExecuteContext(utils.SetLogger(
+		utils.SetClient(context.Background(), s.Client),
+		&logger,
+	)))
 }
 
 func (s *testServer) GetCurrentToken(t *testing.T) []byte {

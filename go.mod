@@ -9,11 +9,11 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/klauspost/compress v1.15.9
-	github.com/pckhoi/uma v0.3.1
+	github.com/pckhoi/uma v0.3.2
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
-	github.com/wrgl/wrgl v0.12.1-0.20221023090738-20e27129953e
+	github.com/wrgl/wrgl v0.12.2
 	gopkg.in/dnaeon/go-vcr.v3 v3.1.0
 )
 

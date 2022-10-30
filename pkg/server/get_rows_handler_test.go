@@ -3,13 +3,13 @@ package server_test
 import (
 	"encoding/csv"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/wrgl/wrgl/pkg/factory"
-	"github.com/wrgl/wrgl/pkg/objects"
 	"github.com/wrgl/wrgl/pkg/testutils"
 )
 
@@ -24,15 +24,14 @@ func (s *testSuite) TestGetRowsHandler(t *testing.T) {
 		"2,a,s",
 		"3,z,x",
 	}, []uint32{0}, nil)
-	tbl, err := objects.GetTable(db, com.Table)
-	require.NoError(t, err)
 
-	_, err = cli.GetTableRows(testutils.SecureRandomBytes(16), nil)
+	_, err := cli.GetTableRows(testutils.SecureRandomBytes(16), nil)
 	assertHTTPError(t, err, http.StatusNotFound, "Not Found")
 
 	resp, err := cli.GetTableRows(com.Table, nil)
 	require.NoError(t, err)
-	assertBlocksCSV(t, db, tbl.Blocks, nil, resp)
+	assert.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode)
+	assert.Equal(t, fmt.Sprintf("/tables/%x/blocks/", com.Table), resp.Header.Get("Location"))
 
 	_, err = cli.GetTableRows(com.Table, []int{-1})
 	assertHTTPError(t, err, http.StatusBadRequest, "offset out of range \"-1\"")
@@ -67,5 +66,6 @@ func (s *testSuite) TestGetRowsHandler(t *testing.T) {
 
 	resp, err = cli.GetRows(hex.EncodeToString(sum), nil)
 	require.NoError(t, err)
-	assertBlocksCSV(t, db, tbl.Blocks, nil, resp)
+	assert.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode)
+	assert.Equal(t, fmt.Sprintf("/tables/%x/blocks/", com.Table), resp.Header.Get("Location"))
 }

@@ -58,7 +58,7 @@ func TestCredAuthCmd(t *testing.T) {
 
 	rd, cleanUp := createRepoDir(t)
 	defer cleanUp()
-	ts := newTestServer(t, rd, "testdata/go-vcr/testCredAuth", false)
+	ts := newTestServer(t, rd, "testCredAuth", false)
 	defer ts.Stop(t)
 
 	cmd := rootCmd()
