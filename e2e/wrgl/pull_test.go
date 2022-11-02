@@ -105,10 +105,8 @@ func TestPullCmd(t *testing.T) {
 	cmd = rootCmd()
 	cmd.SetArgs([]string{"pull", "--all", "--no-progress"})
 	assertCmdOutput(t, cmd, strings.Join([]string{
-		"pulling \x1b[1mgamma\x1b[0m...",
-		fmt.Sprintf("\x1b[0m[gamma %s] %s", hex.EncodeToString(sum6)[:7], c6.Message),
-		"pulling \x1b[1mmain\x1b[0m...",
-		"\x1b[0mAlready up to date.",
+		"1 out of 2 branches updated",
+		fmt.Sprintf("[gamma %s] %s", hex.EncodeToString(sum6)[:7], c6.Message),
 		"",
 	}, "\n"))
 	sum, err = ref.GetHead(rs, "gamma")
