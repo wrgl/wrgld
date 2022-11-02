@@ -64,14 +64,13 @@ func httpError(t *testing.T, code int, message string) *apiclient.HTTPError {
 
 func assertCmdUnauthorized(t *testing.T, cmd *cobra.Command, url string) {
 	t.Helper()
-	assertCmdFailed(t, cmd, strings.Join([]string{
-		fmt.Sprintf("No credential found for %s", url),
-		"Proceed as anonymous user...",
-		"Unauthorized.",
-		"Run this command to authenticate:",
-		fmt.Sprintf("    wrgl credentials authenticate %s", url),
-		"",
-	}, "\n"), httpError(t, http.StatusForbidden, "Forbidden"))
+	assertCmdFailed(t, cmd, "",
+		fmt.Errorf(
+			"%w\nRun this command to authenticate:\n    wrgl credentials authenticate %s",
+			httpError(t, http.StatusForbidden, "Forbidden"),
+			url,
+		),
+	)
 }
 
 func TestFetchCmd(t *testing.T) {
