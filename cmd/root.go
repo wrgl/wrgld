@@ -16,12 +16,7 @@ import (
 	"github.com/wrgl/wrgl/pkg/local"
 )
 
-//go:embed VERSION
 var version string
-
-func init() {
-	version = strings.TrimSpace(version)
-}
 
 func RootCmd() *cobra.Command {
 	cmd := &cobra.Command{
