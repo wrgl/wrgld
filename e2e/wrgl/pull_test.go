@@ -132,8 +132,6 @@ func TestPullCmd(t *testing.T) {
 	cmd = rootCmd()
 	cmd.SetArgs([]string{"pull", "main", "--no-progress"})
 	assertCmdOutput(t, cmd, strings.Join([]string{
-		fmt.Sprintf("No credential found for %s", url),
-		"Proceed as anonymous user...",
 		fmt.Sprintf("From %s", url),
 		fmt.Sprintf("   %s..%s  main        -> my-repo/main", hex.EncodeToString(sum3)[:7], hex.EncodeToString(sum7)[:7]),
 		fmt.Sprintf("Fast forward to %s", hex.EncodeToString(sum7)[:7]),

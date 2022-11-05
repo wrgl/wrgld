@@ -64,12 +64,9 @@ func httpError(t *testing.T, code int, message string) *apiclient.HTTPError {
 
 func assertCmdUnauthorized(t *testing.T, cmd *cobra.Command, url string) {
 	t.Helper()
-	assertCmdFailed(t, cmd, strings.Join([]string{
-		fmt.Sprintf("No credential found for %s", url),
-		"Proceed as anonymous user...",
-		"Credentials are invalid",
-		"",
-	}, "\n"), httpError(t, http.StatusUnauthorized, "Unauthorized"))
+	assertCmdFailed(t, cmd, "",
+		httpError(t, http.StatusUnauthorized, "Unauthorized"),
+	)
 }
 
 func TestFetchCmd(t *testing.T) {
@@ -497,6 +494,7 @@ func TestFetchMissingTablesCmd(t *testing.T) {
 	assertCmdOutput(t, cmd, strings.Join([]string{
 		"From " + url,
 		" * [new branch]      alpha       -> origin/alpha",
+		"",
 		fmt.Sprintf("[alpha %s] %s", hex.EncodeToString(sum2)[:7], c2.Message),
 		"",
 	}, "\n"))
@@ -505,6 +503,7 @@ func TestFetchMissingTablesCmd(t *testing.T) {
 	assertCmdOutput(t, cmd, strings.Join([]string{
 		"From " + url,
 		" * [new branch]      beta        -> origin/beta",
+		"",
 		fmt.Sprintf("[beta %s] %s", hex.EncodeToString(sum4)[:7], c4.Message),
 		"",
 	}, "\n"))

@@ -127,11 +127,15 @@ func TestTransactionCmd(t *testing.T) {
 		header, fp := createRandomCSVFile(t)
 		defer os.Remove(fp)
 		files[branch] = fp
-		cmd = rootCmd()
-		cmd.SetArgs([]string{"config", "set", fmt.Sprintf("branch.%s.file", branch), fp})
-		require.NoError(t, cmd.Execute())
-		cmd = rootCmd()
-		cmd.SetArgs([]string{"config", "set", fmt.Sprintf("branch.%s.primaryKey", branch), fmt.Sprintf(`[%q]`, header[0])})
+		for key, val := range map[string]string{
+			fmt.Sprintf("branch.%s.file", branch):       fp,
+			fmt.Sprintf("branch.%s.primaryKey", branch): fmt.Sprintf(`[%q]`, header[0]),
+			fmt.Sprintf("branch.%s.merge", branch):      "refs/heads/" + branch,
+		} {
+			cmd = rootCmd()
+			cmd.SetArgs([]string{"config", "set", key, val})
+			require.NoError(t, cmd.Execute())
+		}
 	}
 
 	cmd = rootCmd()

@@ -11,6 +11,7 @@ BINARIES := $(foreach osarch,$(OS_ARCHS),$(BUILD_DIR)/wrgld-$(osarch)/bin/wrgld)
 WRGLD_TAR_FILES := $(foreach osarch,$(OS_ARCHS),$(BUILD_DIR)/wrgld-$(osarch).tar.gz)
 IMAGES := $(BUILD_DIR)/wrgld.image
 WRGLD_STATIC_ASSETS := $(wildcard wrgld/pkg/auth/oauth2/static/*) $(wildcard wrgld/pkg/auth/oauth2/templates/*)
+COMMON_LDFLAGS = -X github.com/wrgl/wrgld/cmd.version=$(VERSION)
 
 .PHONY: all clean images
 all: $(WRGLD_TAR_FILES)
@@ -34,13 +35,12 @@ __check_defined = \
 $(call check_defined, VERSION)
 
 define binary_rule =
-echo "\$$(BUILD_DIR)/wrgld-$(2)-$(1)/bin/wrgld: \$$(MD5_DIR)/go.sum.md5 VERSION \$$(wrgld_SOURCES)" >> $(3) && \
+echo "\$$(BUILD_DIR)/wrgld-$(2)-$(1)/bin/wrgld: \$$(MD5_DIR)/go.sum.md5 \$$(wrgld_SOURCES)" >> $(3) && \
 echo -e "\t@-mkdir -p \$$(dir \$$@) 2>/dev/null" >> $(3) && \
-echo -e "\techo -n $(VERSION) > cmd/VERSION" >> $(3) && \
 (if [ "$(2)" == "linux" ]; then \
-  echo -e "\tenv CC=x86_64-linux-musl-gcc CXX=x86_64-linux-musl-g++ GOARCH=amd64 GOOS=linux CGO_ENABLED=1 go build -ldflags \"-linkmode external -extldflags -static\" -a -o \$$@ github.com/wrgl/wrgld" >> $(3); \
+  echo -e "\tenv CC=x86_64-linux-musl-gcc CXX=x86_64-linux-musl-g++ GOARCH=amd64 GOOS=linux CGO_ENABLED=1 go build -ldflags \"-linkmode external -extldflags -static \$$(COMMON_LDFLAGS)\" -a -o \$$@ github.com/wrgl/wrgld" >> $(3); \
 else \
-  echo -e "\tCGO_ENABLED=1 GOARCH=$(1) GOOS=$(2) go build -a -o \$$@ github.com/wrgl/wrgld" >> $(3); \
+  echo -e "\tCGO_ENABLED=1 GOARCH=$(1) GOOS=$(2) go build -ldflags \"\$$(COMMON_LDFLAGS)\" -a -o \$$@ github.com/wrgl/wrgld" >> $(3); \
 fi) && \
 echo "" >> $(3)
 
@@ -82,9 +82,9 @@ $(foreach osarch,$(OS_ARCHS),$(eval $(call license_rule,$(osarch))))
 
 $(foreach osarch,$(OS_ARCHS),$(eval $(call tar_rule,$(osarch))))
 
-$(BUILD_DIR)/wrgld.image: wrgld.Dockerfile $(BUILD_DIR)/wrgld-linux-amd64/bin/wrgld $(BUILD_DIR)/wrgld-linux-amd64/LICENSE VERSION
+$(BUILD_DIR)/wrgld.image: wrgld.Dockerfile $(BUILD_DIR)/wrgld-linux-amd64/bin/wrgld $(BUILD_DIR)/wrgld-linux-amd64/LICENSE
 	$(DOCKER) build -t wrgld:latest -f wrgld.Dockerfile $(BUILD_DIR)/wrgld-linux-amd64
-	$(DOCKER) tag wrgld:latest wrgld:$(file < VERSION)
+	$(DOCKER) tag wrgld:latest wrgld:$(VERSION)
 	$(DOCKER) images --format '{{.ID}}' wrgld:latest > $@
 
 $(BUILD_DIR): ; @-mkdir $@ 2>/dev/null

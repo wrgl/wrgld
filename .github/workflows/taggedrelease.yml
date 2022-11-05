@@ -21,6 +21,11 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Checkout code
         uses: actions/checkout@v2
+      - id: get_version
+        uses: battila7/get-version-action@v2
+      - name: create VERSION file
+        run: |
+          echo -n ${{ steps.get_version.outputs.version }} > cmd/VERSION
       - name: Test all packages except csvgen
         run: |
           go test $(go list ./... | grep -v csvgen)
@@ -39,10 +44,10 @@ jobs:
       - name: Install cross-compiler
         run: brew install FiloSottile/musl-cross/musl-cross
       - uses: actions/checkout@v2
-      - name: Build
-        run: gmake
       - id: get_version
         uses: battila7/get-version-action@v2
+      - name: Build
+        run: "gmake VERSION=${{ steps.get_version.outputs.version }}"
       - name: Put version number in wrgld installer
         uses: bluwy/substitute-string-action@v1
         id: sub-wrgld-installer
