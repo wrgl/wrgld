@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"testing"
 	"time"
 
@@ -12,12 +13,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/wrgl/wrgl/pkg/api/payload"
+	"github.com/wrgl/wrgl/pkg/conf"
 	"github.com/wrgl/wrgl/pkg/ref"
 	"github.com/wrgl/wrgl/pkg/testutils"
+	server_testutils "github.com/wrgl/wrgld/pkg/server/testutils"
+	"github.com/wrgl/wrgld/pkg/webhook"
 )
 
 func (s *testSuite) TestTransaction(t *testing.T) {
-	_, cli, _, cleanup := s.s.NewClient(t, "", true)
+	repo, cli, _, cleanup := s.s.NewClient(t, "", true)
 	defer cleanup()
 
 	ctr, err := cli.CreateTransaction(nil)
@@ -69,6 +73,10 @@ func (s *testSuite) TestTransaction(t *testing.T) {
 	cr5, err := cli.Commit("beta", "initial commit", "file.csv", testutils.RawCSVBytesReader(testutils.BuildRawCSV(3, 4)), nil, &tid)
 	require.NoError(t, err)
 
+	// setup webhook
+	getWebhookPayload, cleanup := s.setupWebhook(t, repo, conf.CommitEventType)
+	defer cleanup()
+
 	resp, err = cli.CommitTransaction(tid)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -76,6 +84,35 @@ func (s *testSuite) TestTransaction(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, string(ref.TSCommitted), gtr.Status)
 	assert.NotEmpty(t, gtr.End)
+
+	// test webhook received commit event
+	s.webhookWG.Wait()
+	pl := getWebhookPayload()
+	require.NotNil(t, pl)
+	assert.Len(t, pl.Events, 1)
+	ce := pl.Events[0].(*webhook.CommitEvent)
+	sort.Slice(ce.Commits, func(i, j int) bool {
+		return ce.Commits[i].Ref < ce.Commits[j].Ref
+	})
+	assert.Equal(t, &webhook.CommitEvent{
+		Type:          conf.CommitEventType,
+		TransactionID: tid.String(),
+		Commits: []webhook.Commit{
+			{
+				Sum:     cr4.Sum.String(),
+				Ref:     "heads/alpha",
+				Message: fmt.Sprintf("commit [tx/%s]\nsecond commit", tid.String()),
+			},
+			{
+				Sum:     cr5.Sum.String(),
+				Ref:     "heads/beta",
+				Message: fmt.Sprintf("commit [tx/%s]\ninitial commit", tid.String()),
+			},
+		},
+		AuthorName:  server_testutils.Name,
+		AuthorEmail: server_testutils.Email,
+		Time:        ce.Time,
+	}, ce)
 
 	com1, err := cli.GetHead("alpha")
 	require.NoError(t, err)

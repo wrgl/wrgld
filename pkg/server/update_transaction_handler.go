@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"github.com/wrgl/wrgl/pkg/api"
 	"github.com/wrgl/wrgl/pkg/api/payload"
 	"github.com/wrgl/wrgl/pkg/transaction"
+	"github.com/wrgl/wrgld/pkg/webhook"
 )
 
 func parseJSONRequest(r *http.Request, rw http.ResponseWriter, obj interface{}) bool {
@@ -28,6 +30,11 @@ func parseJSONRequest(r *http.Request, rw http.ResponseWriter, obj interface{}) 
 }
 
 func (s *Server) handleUpdateTransaction(rw http.ResponseWriter, r *http.Request) {
+	author := GetAuthor(r)
+	if author == nil {
+		SendHTTPError(rw, r, http.StatusUnauthorized)
+		return
+	}
 	db := s.getDB(r)
 	rs := s.getRS(r)
 	tid, ok := extractTransactionID(rw, r, rs)
@@ -39,9 +46,29 @@ func (s *Server) handleUpdateTransaction(rw http.ResponseWriter, r *http.Request
 		return
 	}
 	if req.Commit {
-		if err := transaction.Commit(db, rs, *tid); err != nil {
+		commitsMap, err := transaction.Commit(db, rs, *tid)
+		if err != nil {
 			panic(err)
 		}
+		ws, err := webhook.NewSender(s.getConfS(r), s.logger, s.webhookSenderOpts...)
+		if err != nil {
+			panic(err)
+		}
+		defer ws.Flush()
+		commits := []webhook.Commit{}
+		for refname, com := range commitsMap {
+			commits = append(commits, webhook.Commit{
+				Sum:     hex.EncodeToString(com.Sum),
+				Ref:     refname,
+				Message: com.Message,
+			})
+		}
+		ws.EnqueueEvent(&webhook.CommitEvent{
+			TransactionID: tid.String(),
+			Commits:       commits,
+			AuthorName:    author.Name,
+			AuthorEmail:   author.Email,
+		})
 	} else if req.Discard {
 		if err := transaction.Discard(rs, *tid); err != nil {
 			panic(err)

@@ -13,12 +13,26 @@ import (
 	"github.com/stretchr/testify/require"
 	apiclient "github.com/wrgl/wrgl/pkg/api/client"
 	"github.com/wrgl/wrgl/pkg/api/payload"
+	"github.com/wrgl/wrgl/pkg/conf"
 	"github.com/wrgl/wrgl/pkg/factory"
 	"github.com/wrgl/wrgl/pkg/objects"
 	"github.com/wrgl/wrgl/pkg/ref"
 	"github.com/wrgl/wrgl/pkg/testutils"
 	server_testutils "github.com/wrgl/wrgld/pkg/server/testutils"
+	"github.com/wrgl/wrgld/pkg/webhook"
+	webhooktest "github.com/wrgl/wrgld/pkg/webhook/test"
 )
+
+func (s *testSuite) setupWebhook(t *testing.T, repo string, eventTypes ...conf.WebhookEventType) (getWebhookPayload func() (body *webhook.Payload), cleanup func()) {
+	t.Helper()
+	cs := s.s.GetConfS(repo)
+	wh, getWebhookPayload, cleanup := webhooktest.CreateWebhookHandler(t, eventTypes, false)
+	c, err := cs.Open()
+	require.NoError(t, err)
+	c.Webhooks = append(c.Webhooks, wh)
+	require.NoError(t, cs.Save(c))
+	return getWebhookPayload, cleanup
+}
 
 func (s *testSuite) TestCommitHandler(t *testing.T) {
 	repo, cli, m, cleanup := s.s.NewClient(t, "", true)
@@ -27,6 +41,10 @@ func (s *testSuite) TestCommitHandler(t *testing.T) {
 	rs := s.s.GetRS(repo)
 	parent, parentCom := factory.CommitRandom(t, db, nil)
 	require.NoError(t, ref.CommitHead(rs, "alpha", parent, parentCom, nil))
+
+	// setup webhook
+	getWebhookPayload, cleanup := s.setupWebhook(t, repo, conf.CommitEventType)
+	defer cleanup()
 
 	// missing branch
 	_, err := cli.Commit("", "", "", nil, nil, nil)
@@ -74,6 +92,26 @@ func (s *testSuite) TestCommitHandler(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, cr.Sum)
 	assert.NotEmpty(t, cr.Table)
+
+	// test webhook received commit event
+	s.webhookWG.Wait()
+	pl := getWebhookPayload()
+	require.NotNil(t, pl)
+	assert.Len(t, pl.Events, 1)
+	ce := pl.Events[0].(*webhook.CommitEvent)
+	assert.Equal(t, &webhook.CommitEvent{
+		Type: conf.CommitEventType,
+		Commits: []webhook.Commit{
+			{
+				Sum:     cr.Sum.String(),
+				Ref:     "heads/alpha",
+				Message: "initial commit",
+			},
+		},
+		AuthorName:  server_testutils.Name,
+		AuthorEmail: server_testutils.Email,
+		Time:        ce.Time,
+	}, ce)
 
 	com, err := objects.GetCommit(db, (*cr.Sum)[:])
 	require.NoError(t, err)

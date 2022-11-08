@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/csv"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 	"github.com/wrgl/wrgl/pkg/objects"
 	"github.com/wrgl/wrgl/pkg/ref"
 	"github.com/wrgl/wrgl/pkg/sorter"
+	"github.com/wrgl/wrgld/pkg/webhook"
 )
 
 func (s *Server) handleCommit(rw http.ResponseWriter, r *http.Request) {
@@ -86,9 +88,8 @@ func (s *Server) handleCommit(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	var opts = []ingest.InserterOption{}
-	if s.debugLogger != nil {
-		opts = append(opts, ingest.WithDebugLogger(s.debugLogger))
-	}
+	debugLogger := s.logger.V(1)
+	opts = append(opts, ingest.WithDebugLogger(&debugLogger))
 	sorter := s.sPool.Get().(*sorter.Sorter)
 	sorter.Reset()
 	defer s.sPool.Put(sorter)
@@ -129,9 +130,28 @@ func (s *Server) handleCommit(rw http.ResponseWriter, r *http.Request) {
 		if err = ref.SaveTransactionRef(rs, *tid, branch, commitSum); err != nil {
 			panic(err)
 		}
-	} else if err = ref.CommitHead(rs, branch, commitSum, commit, nil); err != nil {
-		panic(err)
+	} else {
+		if err = ref.CommitHead(rs, branch, commitSum, commit, nil); err != nil {
+			panic(err)
+		}
+		ws, err := webhook.NewSender(s.getConfS(r), s.logger, s.webhookSenderOpts...)
+		if err != nil {
+			panic(err)
+		}
+		defer ws.Flush()
+		ws.EnqueueEvent(&webhook.CommitEvent{
+			Commits: []webhook.Commit{
+				{
+					Sum:     hex.EncodeToString(commitSum),
+					Ref:     ref.HeadRef(branch),
+					Message: commit.Message,
+				},
+			},
+			AuthorName:  commit.AuthorName,
+			AuthorEmail: commit.AuthorEmail,
+		})
 	}
+
 	if s.postCommit != nil {
 		s.postCommit(r, commit, commitSum, branch, tid)
 	}

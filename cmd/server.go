@@ -132,6 +132,7 @@ func NewServer(rd *local.RepoDir, client *http.Client, logger logr.Logger, disab
 		func(r *http.Request) conf.Store { return cs },
 		func(r *http.Request) server.UploadPackSessionStore { return s.upSessions },
 		func(r *http.Request) server.ReceivePackSessionStore { return s.rpSessions },
+		logger,
 	)
 	s.handler = wrgldutils.ApplyMiddlewares(
 		handler,

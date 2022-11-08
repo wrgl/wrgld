@@ -2,14 +2,17 @@ package server_test
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"net/http"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	apiclient "github.com/wrgl/wrgl/pkg/api/client"
 	"github.com/wrgl/wrgl/pkg/api/payload"
+	"github.com/wrgl/wrgl/pkg/conf"
 	"github.com/wrgl/wrgl/pkg/encoding/packfile"
 	"github.com/wrgl/wrgl/pkg/factory"
 	"github.com/wrgl/wrgl/pkg/objects"
@@ -18,6 +21,7 @@ import (
 	refhelpers "github.com/wrgl/wrgl/pkg/ref/helpers"
 	refmock "github.com/wrgl/wrgl/pkg/ref/mock"
 	server_testutils "github.com/wrgl/wrgld/pkg/server/testutils"
+	"github.com/wrgl/wrgld/pkg/webhook"
 )
 
 func assertRefEqual(t *testing.T, rs ref.Store, r string, sum []byte) {
@@ -59,6 +63,10 @@ func (s *testSuite) TestReceivePackHandler(t *testing.T) {
 	require.NoError(t, ref.CommitHead(rsc, "delta", sum6, c6, nil))
 	require.NoError(t, ref.CommitHead(rsc, "theta", sum8, c8, nil))
 
+	// setup webhook
+	getWebhookPayload, cleanup := s.setupWebhook(t, repo, conf.RefUpdateEventType)
+	defer cleanup()
+
 	updates := map[string]*payload.Update{
 		"refs/heads/alpha": {OldSum: payload.BytesToHex(sum1), Sum: payload.BytesToHex(sum4)}, // fast-forward
 		"refs/heads/beta":  {OldSum: payload.BytesToHex(sum2)},                                // delete
@@ -69,6 +77,7 @@ func (s *testSuite) TestReceivePackHandler(t *testing.T) {
 	updates = server_testutils.PushObjects(t, dbc, rsc, cli, updates, remoteRefs, 0)
 	assert.Equal(t, "remote ref updated since checkout", updates["refs/heads/delta"].ErrMsg)
 	delete(updates, "refs/heads/delta")
+
 	updates = server_testutils.PushObjects(t, dbc, rsc, cli, updates, remoteRefs, 0)
 	assert.Empty(t, updates["refs/heads/alpha"].ErrMsg)
 	assert.Empty(t, updates["refs/heads/beta"].ErrMsg)
@@ -103,6 +112,55 @@ func (s *testSuite) TestReceivePackHandler(t *testing.T) {
 		Action:      "receive-pack",
 		Message:     "update ref",
 	})
+
+	// test webhook received ref update event
+	s.webhookWG.Wait()
+	pl := getWebhookPayload()
+	require.NotNil(t, pl)
+	sort.Slice(pl.Events, func(i, j int) bool {
+		a := pl.Events[i].(*webhook.RefUpdateEvent)
+		b := pl.Events[j].(*webhook.RefUpdateEvent)
+		return a.Ref < b.Ref
+	})
+	for i, e := range []*webhook.RefUpdateEvent{
+		{
+			Type:    conf.RefUpdateEventType,
+			Ref:     "heads/alpha",
+			OldSum:  hex.EncodeToString(sum1),
+			Sum:     hex.EncodeToString(sum4),
+			Action:  "receive-pack",
+			Message: "update ref",
+		},
+		{
+			Type:   conf.RefUpdateEventType,
+			Ref:    "heads/beta",
+			OldSum: hex.EncodeToString(sum2),
+		},
+		{
+			Type:    conf.RefUpdateEventType,
+			Ref:     "heads/gamma",
+			Sum:     hex.EncodeToString(sum5),
+			Action:  "receive-pack",
+			Message: "create ref",
+		},
+		{
+			Type:    conf.RefUpdateEventType,
+			Ref:     "heads/theta",
+			OldSum:  hex.EncodeToString(sum7),
+			Sum:     hex.EncodeToString(sum8),
+			Action:  "receive-pack",
+			Message: "update ref",
+		},
+	} {
+		obj := pl.Events[i].(*webhook.RefUpdateEvent)
+		assert.Equal(t, conf.RefUpdateEventType, e.Type, "event #%d", i)
+		assert.Equal(t, obj.Ref, e.Ref, "event #%d", i)
+		assert.Equal(t, obj.OldSum, e.OldSum, "event #%d", i)
+		assert.Equal(t, obj.Sum, e.Sum, "event #%d", i)
+		assert.Equal(t, obj.Action, e.Action, "event #%d", i)
+		assert.Equal(t, obj.Message, e.Message, "event #%d", i)
+		assert.NotEmpty(t, obj.Time, "event #%d", i)
+	}
 
 	// delete only
 	updates = map[string]*payload.Update{

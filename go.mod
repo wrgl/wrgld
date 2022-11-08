@@ -3,8 +3,10 @@ module github.com/wrgl/wrgld
 go 1.19
 
 require (
+	github.com/brianvoe/gofakeit/v6 v6.18.0
 	github.com/chromedp/chromedp v0.8.5
 	github.com/coreos/go-oidc/v3 v3.2.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/go-logr/logr v1.2.3
 	github.com/go-logr/stdr v1.2.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -25,7 +27,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/chromedp/cdproto v0.0.0-20220827030233-358ed4af73cf // indirect
 	github.com/chromedp/sysutil v1.0.0 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgraph-io/badger/v3 v3.2103.2 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
@@ -84,6 +85,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/pckhoi/uma => ../uma
-
-replace github.com/wrgl/wrgl => ../wrgl
+replace (
+	github.com/pckhoi/uma => ../uma
+	github.com/wrgl/wrgl => ../wrgl
+)

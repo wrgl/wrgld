@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/wrgl/wrgl/pkg/api"
 	apiutils "github.com/wrgl/wrgl/pkg/api/utils"
+	"github.com/wrgl/wrgld/pkg/webhook"
 )
 
 type ReceivePackSessionStore interface {
@@ -39,12 +40,12 @@ func (s *Server) getReceivePackSession(r *http.Request, sessions ReceivePackSess
 		if err != nil {
 			panic(err)
 		}
+		ws := webhook.NewSenderWithConfig(c, s.logger, s.webhookSenderOpts...)
 		opts := make([]apiutils.ObjectReceiveOption, len(s.receiverOpts))
 		copy(opts, s.receiverOpts)
-		if s.debugLogger != nil {
-			opts = append(opts, apiutils.WithReceiverDebugLogger(s.debugLogger))
-		}
-		ses = NewReceivePackSession(db, rs, c, sid, opts...)
+		debugLogger := s.logger.V(1)
+		opts = append(opts, apiutils.WithReceiverDebugLogger(&debugLogger))
+		ses = NewReceivePackSession(db, rs, c, sid, ws, opts...)
 		sessions.Set(sid, ses)
 	}
 	return

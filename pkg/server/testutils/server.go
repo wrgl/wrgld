@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr/testr"
 	"github.com/golang-jwt/jwt"
 	"github.com/pckhoi/uma"
 	"github.com/stretchr/testify/require"
@@ -107,6 +108,7 @@ func NewServer(t *testing.T, rootPath *regexp.Regexp, opts ...server.ServerOptio
 		func(r *http.Request) server.ReceivePackSessionStore {
 			return ts.GetRpSessions(getRepo(r))
 		},
+		testr.New(t),
 		opts...,
 	)
 	return ts
@@ -287,9 +289,14 @@ func (s *Server) NewRemote(t *testing.T, pathPrefix string) (repo string, uri st
 func (s *Server) NewClient(t *testing.T, pathPrefix string, authorized bool) (string, *apiclient.Client, *RequestCaptureMiddleware, func()) {
 	t.Helper()
 	repo, url, m, cleanup := s.NewRemote(t, pathPrefix)
-	var opts []apiclient.ClientOption
+	logger := testr.New(t)
+	var opts = []apiclient.ClientOption{
+		apiclient.WithLogger(&logger),
+	}
 	if authorized {
-		opts = append(opts, apiclient.WithRelyingPartyToken(s.AdminToken(t)))
+		opts = append(opts,
+			apiclient.WithRelyingPartyToken(s.AdminToken(t)),
+		)
 	}
 	cli, err := apiclient.NewClient(url, opts...)
 	require.NoError(t, err)

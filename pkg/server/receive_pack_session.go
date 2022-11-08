@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"compress/gzip"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 	"github.com/wrgl/wrgl/pkg/encoding/packfile"
 	"github.com/wrgl/wrgl/pkg/objects"
 	"github.com/wrgl/wrgl/pkg/ref"
+	"github.com/wrgl/wrgld/pkg/webhook"
 )
 
 type ReceivePackSession struct {
@@ -28,6 +30,7 @@ type ReceivePackSession struct {
 	receiver     *apiutils.ObjectReceiver
 	id           uuid.UUID
 	receiverOpts []apiutils.ObjectReceiveOption
+	ws           *webhook.Sender
 }
 
 func parseReceivePackRequest(r *http.Request) (req *payload.ReceivePackRequest, err error) {
@@ -43,12 +46,13 @@ func parseReceivePackRequest(r *http.Request) (req *payload.ReceivePackRequest, 
 	return req, nil
 }
 
-func NewReceivePackSession(db objects.Store, rs ref.Store, c *conf.Config, id uuid.UUID, receiverOpts ...apiutils.ObjectReceiveOption) *ReceivePackSession {
+func NewReceivePackSession(db objects.Store, rs ref.Store, c *conf.Config, id uuid.UUID, ws *webhook.Sender, receiverOpts ...apiutils.ObjectReceiveOption) *ReceivePackSession {
 	s := &ReceivePackSession{
 		db:           db,
 		rs:           rs,
 		c:            c,
 		id:           id,
+		ws:           ws,
 		receiverOpts: receiverOpts,
 	}
 	s.state = s.greet
@@ -78,6 +82,9 @@ func (s *ReceivePackSession) respondWithTableACKs(rw http.ResponseWriter, r *htt
 }
 
 func (s *ReceivePackSession) saveRefs() error {
+	if s.ws != nil {
+		defer s.ws.Flush()
+	}
 	for dst, u := range s.updates {
 		oldSum, _ := ref.GetRef(s.rs, strings.TrimPrefix(dst, "refs/"))
 		if (u.OldSum == nil && oldSum != nil) || (u.OldSum != nil && !bytes.Equal(oldSum, (*u.OldSum)[:])) {
@@ -85,13 +92,23 @@ func (s *ReceivePackSession) saveRefs() error {
 			continue
 		}
 		var sum []byte
+		refname := strings.TrimPrefix(dst, "refs/")
 		if u.Sum == nil {
 			if s.c.Receive != nil && *s.c.Receive.DenyDeletes {
 				u.ErrMsg = "remote does not support deleting refs"
 			} else {
-				err := ref.DeleteRef(s.rs, strings.TrimPrefix(dst, "refs/"))
+				err := ref.DeleteRef(s.rs, refname)
 				if err != nil {
 					return err
+				}
+				if s.ws != nil {
+					evt := &webhook.RefUpdateEvent{
+						Ref: refname,
+					}
+					if oldSum != nil {
+						evt.OldSum = hex.EncodeToString(oldSum)
+					}
+					s.ws.EnqueueEvent(evt)
 				}
 			}
 			continue
@@ -119,7 +136,7 @@ func (s *ReceivePackSession) saveRefs() error {
 		}
 		err := ref.SaveRef(
 			s.rs,
-			strings.TrimPrefix(dst, "refs/"),
+			refname,
 			sum,
 			s.c.User.Name,
 			s.c.User.Email,
@@ -128,6 +145,18 @@ func (s *ReceivePackSession) saveRefs() error {
 		)
 		if err != nil {
 			return err
+		}
+		if s.ws != nil {
+			evt := &webhook.RefUpdateEvent{
+				Ref:     refname,
+				Sum:     hex.EncodeToString(sum),
+				Action:  "receive-pack",
+				Message: msg,
+			}
+			if oldSum != nil {
+				evt.OldSum = hex.EncodeToString(oldSum)
+			}
+			s.ws.EnqueueEvent(evt)
 		}
 	}
 	return nil

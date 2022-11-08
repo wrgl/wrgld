@@ -15,6 +15,7 @@ import (
 	"github.com/wrgl/wrgl/pkg/ref"
 	"github.com/wrgl/wrgl/pkg/router"
 	"github.com/wrgl/wrgl/pkg/sorter"
+	"github.com/wrgl/wrgld/pkg/webhook"
 )
 
 var (
@@ -65,32 +66,33 @@ func WithPostCommitCallback(postCommit PostCommitHook) ServerOption {
 	}
 }
 
-func WithDebug(w *logr.Logger) ServerOption {
-	return func(s *Server) {
-		s.debugLogger = w
-	}
-}
-
 func WithReceiverOptions(opts ...apiutils.ObjectReceiveOption) ServerOption {
 	return func(s *Server) {
 		s.receiverOpts = opts
 	}
 }
 
+func WithWebhookSenderOptions(opts ...webhook.SenderOption) ServerOption {
+	return func(s *Server) {
+		s.webhookSenderOpts = opts
+	}
+}
+
 type PostCommitHook func(r *http.Request, commit *objects.Commit, sum []byte, branch string, tid *uuid.UUID)
 
 type Server struct {
-	getDB        func(r *http.Request) objects.Store
-	getRS        func(r *http.Request) ref.Store
-	getConfS     func(r *http.Request) conf.Store
-	getUpSession func(r *http.Request) UploadPackSessionStore
-	getRPSession func(r *http.Request) ReceivePackSessionStore
-	postCommit   PostCommitHook
-	router       *router.Router
-	maxAge       time.Duration
-	debugLogger  *logr.Logger
-	sPool        *sync.Pool
-	receiverOpts []apiutils.ObjectReceiveOption
+	getDB             func(r *http.Request) objects.Store
+	getRS             func(r *http.Request) ref.Store
+	getConfS          func(r *http.Request) conf.Store
+	getUpSession      func(r *http.Request) UploadPackSessionStore
+	getRPSession      func(r *http.Request) ReceivePackSessionStore
+	postCommit        PostCommitHook
+	router            *router.Router
+	maxAge            time.Duration
+	logger            logr.Logger
+	sPool             *sync.Pool
+	receiverOpts      []apiutils.ObjectReceiveOption
+	webhookSenderOpts []webhook.SenderOption
 }
 
 func NewServer(
@@ -100,6 +102,7 @@ func NewServer(
 	getConfS func(r *http.Request) conf.Store,
 	getUpSession func(r *http.Request) UploadPackSessionStore,
 	getRPSession func(r *http.Request) ReceivePackSessionStore,
+	logger logr.Logger,
 	opts ...ServerOption,
 ) *Server {
 	s := &Server{
@@ -109,6 +112,7 @@ func NewServer(
 		getUpSession: getUpSession,
 		getRPSession: getRPSession,
 		maxAge:       90 * 24 * time.Hour,
+		logger:       logger,
 		sPool: &sync.Pool{
 			New: func() interface{} {
 				s, err := sorter.NewSorter(sorter.WithRunSize(8 * 1024 * 1024))

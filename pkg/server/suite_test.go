@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/google/uuid"
@@ -15,16 +16,20 @@ import (
 	"github.com/wrgl/wrgl/pkg/objects"
 	server "github.com/wrgl/wrgld/pkg/server"
 	server_testutils "github.com/wrgl/wrgld/pkg/server/testutils"
+	"github.com/wrgl/wrgld/pkg/webhook"
 )
 
 type testSuite struct {
 	s                   *server_testutils.Server
 	postCommit          func(r *http.Request, commit *objects.Commit, sum []byte, branch string, tid *uuid.UUID)
 	receiverSaveObjHook func(objType int, sum []byte)
+	webhookWG           *sync.WaitGroup
 }
 
 func newSuite(t *testing.T) *testSuite {
-	ts := &testSuite{}
+	ts := &testSuite{
+		webhookWG: &sync.WaitGroup{},
+	}
 	ts.s = server_testutils.NewServer(t, nil,
 		server.WithPostCommitCallback(func(r *http.Request, commit *objects.Commit, sum []byte, branch string, tid *uuid.UUID) {
 			if ts.postCommit != nil {
@@ -38,6 +43,7 @@ func newSuite(t *testing.T) *testSuite {
 				}
 			}),
 		),
+		server.WithWebhookSenderOptions(webhook.WithWaitGroup(ts.webhookWG)),
 	)
 	return ts
 }

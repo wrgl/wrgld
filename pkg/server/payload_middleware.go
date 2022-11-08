@@ -3,9 +3,9 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"time"
+
+	"github.com/go-logr/logr"
 )
 
 type payloadRecorderKey struct{}
@@ -38,25 +38,24 @@ func setResponseInfo(r *http.Request, info interface{}) {
 	}
 }
 
-func PayloadMiddleware() func(handler http.Handler) http.Handler {
+func PayloadMiddleware(logger logr.Logger) func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			pr := &payloadRecorder{}
 			handler.ServeHTTP(w, setPayloadRecorder(r, pr))
-			ts := time.Now().Format(time.RFC3339)
 			if pr.requestInfo != nil {
 				b, err := json.MarshalIndent(pr.requestInfo, "    ", "  ")
 				if err != nil {
 					panic(err)
 				}
-				fmt.Printf("%s %s %s\n  request %s\n", ts, r.Method, r.URL, string(b))
+				logger.Info("request payload", "method", r.Method, "url", r.URL, "payload", string(b))
 
 				if pr.responseInfo != nil {
 					b, err := json.MarshalIndent(pr.responseInfo, "    ", "  ")
 					if err != nil {
 						panic(err)
 					}
-					fmt.Printf("  response %s\n", string(b))
+					logger.Info("response payload", "payload", string(b))
 				}
 			}
 		})
