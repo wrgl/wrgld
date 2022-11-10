@@ -498,6 +498,7 @@ func TestFetchMissingTablesCmd(t *testing.T) {
 	assertCmdOutput(t, cmd, strings.Join([]string{
 		"From " + url,
 		" * [new branch]      alpha       -> origin/alpha",
+		"",
 		fmt.Sprintf("[alpha %s] %s", hex.EncodeToString(sum2)[:7], c2.Message),
 		"",
 	}, "\n"))
@@ -506,6 +507,7 @@ func TestFetchMissingTablesCmd(t *testing.T) {
 	assertCmdOutput(t, cmd, strings.Join([]string{
 		"From " + url,
 		" * [new branch]      beta        -> origin/beta",
+		"",
 		fmt.Sprintf("[beta %s] %s", hex.EncodeToString(sum4)[:7], c4.Message),
 		"",
 	}, "\n"))

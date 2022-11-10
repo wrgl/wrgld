@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"testing"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/wrgl/wrgl/pkg/api/payload"
 	"github.com/wrgl/wrgl/pkg/conf"
 	"github.com/wrgl/wrgl/pkg/objects"
+	"github.com/wrgl/wrgl/pkg/pbar"
 	"github.com/wrgl/wrgl/pkg/ref"
 )
 
@@ -22,7 +22,7 @@ func decodeGzipPayload(header *http.Header, r io.ReadCloser) (io.ReadCloser, err
 		if err != nil {
 			return nil, err
 		}
-		b, err := ioutil.ReadAll(gzr)
+		b, err := io.ReadAll(gzr)
 		if err != nil {
 			return nil, err
 		}
@@ -66,7 +66,8 @@ func PushObjects(t *testing.T, db objects.Store, rs ref.Store, c *apiclient.Clie
 	t.Helper()
 	ses, err := apiclient.NewReceivePackSession(db, rs, c, updates, remoteRefs, maxPackfileSize, opts...)
 	require.NoError(t, err)
-	updates, err = ses.Start(nil)
+	pc := pbar.NewContainer(io.Discard, true)
+	updates, err = ses.Start(pc)
 	require.NoError(t, err)
 	return updates
 }

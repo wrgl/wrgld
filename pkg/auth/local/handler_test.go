@@ -3,7 +3,7 @@ package authlocal
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -57,7 +57,7 @@ func assertResponse(t *testing.T, handler http.Handler, r *http.Request, status 
 	resp := rec.Result()
 	assert.Equal(t, status, resp.StatusCode, "invalid status")
 	defer resp.Body.Close()
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	assert.Equal(t, body, string(b))
 }
@@ -70,7 +70,7 @@ func assertJSONResponse(t *testing.T, handler http.Handler, r *http.Request, pay
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "invalid status")
 	assert.Contains(t, resp.Header.Get("Content-Type"), "application/json")
 	defer resp.Body.Close()
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	require.NoError(t, json.Unmarshal(b, payload))
 }

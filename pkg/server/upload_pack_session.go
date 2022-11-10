@@ -4,7 +4,7 @@ import (
 	"compress/gzip"
 	"container/list"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -18,7 +18,7 @@ import (
 type stateFn func(rw http.ResponseWriter, r *http.Request) (nextState stateFn)
 
 func parseUploadPackRequest(r *http.Request) (req *payload.UploadPackRequest, err error) {
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		return
 	}

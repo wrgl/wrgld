@@ -3,7 +3,7 @@ package authoauth2
 import (
 	"fmt"
 	"html/template"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -172,7 +172,7 @@ func (h *Handler) parsePOSTForm(r *http.Request) (url.Values, error) {
 			return nil, &HTTPError{http.StatusBadRequest, fmt.Sprintf("unsupported content type %q", s)}
 		}
 		defer r.Body.Close()
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		if err != nil {
 			return nil, err
 		}

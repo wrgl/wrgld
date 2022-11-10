@@ -291,10 +291,8 @@ github.com/subosito/gotenv v1.3.0/go.mod h1:YzJjq/33h7nrwdY+iHMhEOEEbW0ovIz0tB6t
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 github.com/vbauerster/mpb/v8 v8.1.4 h1:MOcLTIbbAA892wVjRiuFHa1nRlNvifQMDVh12Bq/xIs=
 github.com/vbauerster/mpb/v8 v8.1.4/go.mod h1:2fRME8lCLU9gwJwghZb1bO9A3Plc8KPeQ/ayGj+Ek4I=
-github.com/wrgl/wrgl v0.12.6 h1:voYpa6yq4sj04A2p1NU5NUsiop72123aH4myZVTMMC8=
-github.com/wrgl/wrgl v0.12.6/go.mod h1:TpTt0W6ivmbjNBaQk4Z5ocDpTi1PqkQnD/fG0PlOnJc=
-github.com/wrgl/wrgl v0.12.7 h1:15wc/8DEVcUT7NdnCN3i870fvZVXo+tF0U/kvMenZfY=
-github.com/wrgl/wrgl v0.12.7/go.mod h1:TpTt0W6ivmbjNBaQk4Z5ocDpTi1PqkQnD/fG0PlOnJc=
+github.com/wrgl/wrgl v0.12.9 h1:qjGDi3vgiaiFS0P0KZKy6aY7vuYSMRdn2Y1F5HXOuO4=
+github.com/wrgl/wrgl v0.12.9/go.mod h1:TpTt0W6ivmbjNBaQk4Z5ocDpTi1PqkQnD/fG0PlOnJc=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

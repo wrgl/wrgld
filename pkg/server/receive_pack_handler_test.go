@@ -3,6 +3,7 @@ package server_test
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/wrgl/wrgl/pkg/factory"
 	"github.com/wrgl/wrgl/pkg/objects"
 	objmock "github.com/wrgl/wrgl/pkg/objects/mock"
+	"github.com/wrgl/wrgl/pkg/pbar"
 	"github.com/wrgl/wrgl/pkg/ref"
 	refhelpers "github.com/wrgl/wrgl/pkg/ref/helpers"
 	refmock "github.com/wrgl/wrgl/pkg/ref/mock"
@@ -241,7 +243,8 @@ func (s *testSuite) TestReceivePackSkipPersistedTables(t *testing.T) {
 		remoteRefs, 0,
 	)
 	require.NoError(t, err)
-	updates, err := ses.Start(nil)
+	pc := pbar.NewContainer(io.Discard, true)
+	updates, err := ses.Start(pc)
 	require.NoError(t, err)
 	assert.Empty(t, updates["refs/heads/alpha"].ErrMsg)
 	sum, err := ref.GetHead(rs, "alpha")
@@ -267,7 +270,7 @@ func (s *testSuite) TestReceivePackSkipPersistedTables(t *testing.T) {
 			assert.Equal(t, packfile.ObjectCommit, objType)
 		}
 	}, func() {
-		updates, err = ses.Start(nil)
+		updates, err = ses.Start(pbar.NewContainer(io.Discard, true))
 		require.NoError(t, err)
 	})
 	assert.Empty(t, updates["refs/heads/beta"].ErrMsg)

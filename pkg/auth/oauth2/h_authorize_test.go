@@ -3,7 +3,7 @@ package authoauth2
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"testing"
@@ -31,7 +31,7 @@ type responseTestCase struct {
 func assertJSONResponse(t *testing.T, i int, c responseTestCase) {
 	t.Helper()
 	assert.Equal(t, c.Status, c.Resp.StatusCode, "case %d", i)
-	b, err := ioutil.ReadAll(c.Resp.Body)
+	b, err := io.ReadAll(c.Resp.Body)
 	require.NoError(t, err, "case %d", i)
 	require.NoError(t, c.Resp.Body.Close(), "case %d", i)
 	if c.Payload == nil {

@@ -2,7 +2,7 @@ package authlocal
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/wrgl/wrgl/pkg/api"
@@ -68,7 +68,7 @@ func (h *LocalAuthHandler) handleAuthenticate(rw http.ResponseWriter, r *http.Re
 		server.SendError(rw, r, http.StatusUnsupportedMediaType, "json expected")
 		return
 	}
-	b, err := ioutil.ReadAll(r.Body)
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		panic(err)
 	}

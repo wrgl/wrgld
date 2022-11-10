@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -115,7 +115,7 @@ func getWithAuth(t *testing.T, path, token string) *http.Response {
 func assertStatus(t *testing.T, resp *http.Response, status int) {
 	t.Helper()
 	if resp.StatusCode != status {
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		resp.Body.Close()
 		t.Errorf("Status code not equal:\nexpected: %d\nactual: %d\nresponse was: %s", status, resp.StatusCode, string(b))
@@ -134,7 +134,7 @@ func decodeJSON(t *testing.T, resp *http.Response, obj interface{}) {
 	t.Helper()
 	assertStatus(t, resp, http.StatusOK)
 	assert.True(t, strings.Contains(resp.Header.Get("Content-Type"), "application/json"))
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	require.NoError(t, json.Unmarshal(b, obj))
 	require.NoError(t, resp.Body.Close())

@@ -2,7 +2,7 @@ package authoauth2
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -25,7 +25,7 @@ func assertHTMLContains(t *testing.T, html, text string, i ...interface{}) {
 func assertHTMLResponse(t *testing.T, i int, c responseTestCase) {
 	t.Helper()
 	assert.Equal(t, c.Status, c.Resp.StatusCode, "case %d", i)
-	b, err := ioutil.ReadAll(c.Resp.Body)
+	b, err := io.ReadAll(c.Resp.Body)
 	require.NoError(t, err, "case %d", i)
 	require.NoError(t, c.Resp.Body.Close(), "case %d", i)
 	if c.Payload == nil {
