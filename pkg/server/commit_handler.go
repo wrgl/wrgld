@@ -86,13 +86,10 @@ func (s *Server) handleCommit(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	var opts = []ingest.InserterOption{}
-	if s.debugLogger != nil {
-		opts = append(opts, ingest.WithDebugLogger(s.debugLogger))
-	}
 	sorter := s.sPool.Get().(*sorter.Sorter)
 	sorter.Reset()
 	defer s.sPool.Put(sorter)
-	sum, err := ingest.IngestTable(db, sorter, f, primaryKey, opts...)
+	sum, err := ingest.IngestTable(db, sorter, f, primaryKey, s.logger.WithName("ingest"), opts...)
 	if err != nil {
 		if v, ok := err.(*csv.ParseError); ok {
 			sendCSVError(rw, r, v)

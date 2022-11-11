@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr/testr"
 	"github.com/golang-jwt/jwt"
 	"github.com/stretchr/testify/require"
 	apiclient "github.com/wrgl/wrgl/pkg/api/client"
@@ -104,6 +105,7 @@ func NewServer(t *testing.T, rootPath *regexp.Regexp, opts ...server.ServerOptio
 		func(r *http.Request) server.ReceivePackSessionStore {
 			return ts.GetRpSessions(getRepo(r))
 		},
+		testr.New(t),
 		opts...,
 	)
 	return ts
@@ -263,7 +265,7 @@ func (s *Server) NewClient(t *testing.T, pathPrefix string, pathPrefixRegexp *re
 	if authorized {
 		opts = append(opts, apiclient.WithAuthorization(s.AdminToken(t)))
 	}
-	cli, err := apiclient.NewClient(url, opts...)
+	cli, err := apiclient.NewClient(url, testr.New(t), opts...)
 	require.NoError(t, err)
 	return repo, cli, m, cleanup
 }

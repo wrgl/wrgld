@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	"github.com/wrgl/wrgl/pkg/api"
 	"github.com/wrgl/wrgl/pkg/api/payload"
@@ -28,6 +29,7 @@ type ReceivePackSession struct {
 	receiver     *apiutils.ObjectReceiver
 	id           uuid.UUID
 	receiverOpts []apiutils.ObjectReceiveOption
+	logger       logr.Logger
 }
 
 func parseReceivePackRequest(r *http.Request) (req *payload.ReceivePackRequest, err error) {
@@ -43,13 +45,14 @@ func parseReceivePackRequest(r *http.Request) (req *payload.ReceivePackRequest, 
 	return req, nil
 }
 
-func NewReceivePackSession(db objects.Store, rs ref.Store, c *conf.Config, id uuid.UUID, receiverOpts ...apiutils.ObjectReceiveOption) *ReceivePackSession {
+func NewReceivePackSession(db objects.Store, rs ref.Store, c *conf.Config, id uuid.UUID, logger logr.Logger, receiverOpts ...apiutils.ObjectReceiveOption) *ReceivePackSession {
 	s := &ReceivePackSession{
 		db:           db,
 		rs:           rs,
 		c:            c,
 		id:           id,
 		receiverOpts: receiverOpts,
+		logger:       logger,
 	}
 	s.state = s.greet
 	return s
@@ -163,7 +166,7 @@ func (s *ReceivePackSession) greet(rw http.ResponseWriter, r *http.Request) (nex
 		return s.reportStatus(rw, r)
 	}
 	if len(commits) > 0 {
-		s.receiver = apiutils.NewObjectReceiver(s.db, commits, s.receiverOpts...)
+		s.receiver = apiutils.NewObjectReceiver(s.db, commits, s.logger.V(1).WithName("object_receiver"), s.receiverOpts...)
 		s.respondWithTableACKs(rw, r, s.negotiateTables(req))
 		return s.negotiate
 	}

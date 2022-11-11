@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-logr/stdr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/wrgl/wrgl/pkg/conf"
@@ -97,7 +98,8 @@ func RootCmd() *cobra.Command {
 					Transport: transport,
 				}
 			}
-			server, err := NewServer(rd, readTimeout, writeTimeout, client)
+			logger := stdr.New(log.New(cmd.OutOrStdout(), "", 0))
+			server, err := NewServer(rd, readTimeout, writeTimeout, client, logger)
 			if err != nil {
 				return
 			}

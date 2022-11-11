@@ -25,12 +25,6 @@ func WithPostCommitCallback(postCommit PostCommitHook) ServerOption {
 	}
 }
 
-func WithDebug(w *logr.Logger) ServerOption {
-	return func(s *Server) {
-		s.debugLogger = w
-	}
-}
-
 func WithReceiverOptions(opts ...apiutils.ObjectReceiveOption) ServerOption {
 	return func(s *Server) {
 		s.receiverOpts = opts
@@ -59,7 +53,7 @@ type Server struct {
 	postCommit   PostCommitHook
 	router       *router.Router
 	maxAge       time.Duration
-	debugLogger  *logr.Logger
+	logger       logr.Logger
 	sPool        *sync.Pool
 	receiverOpts []apiutils.ObjectReceiveOption
 }
@@ -71,6 +65,7 @@ func NewServer(
 	getConfS ConfStoreGetter,
 	getUpSession UPSessionStoreGetter,
 	getRPSession RPSessionStoreGetter,
+	logger logr.Logger,
 	opts ...ServerOption,
 ) *Server {
 	s := &Server{
@@ -81,6 +76,7 @@ func NewServer(
 		getUpSession: getUpSession,
 		getRPSession: getRPSession,
 		maxAge:       90 * 24 * time.Hour,
+		logger:       logger,
 		sPool: &sync.Pool{
 			New: func() interface{} {
 				s, err := sorter.NewSorter(sorter.WithRunSize(8 * 1024 * 1024))

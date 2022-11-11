@@ -41,10 +41,7 @@ func (s *Server) getReceivePackSession(r *http.Request, sessions ReceivePackSess
 		}
 		opts := make([]apiutils.ObjectReceiveOption, len(s.receiverOpts))
 		copy(opts, s.receiverOpts)
-		if s.debugLogger != nil {
-			opts = append(opts, apiutils.WithReceiverDebugLogger(s.debugLogger))
-		}
-		ses = NewReceivePackSession(db, rs, c, sid, opts...)
+		ses = NewReceivePackSession(db, rs, c, sid, s.logger.WithName("receive_pack"), opts...)
 		sessions.Set(sid, ses)
 	}
 	return

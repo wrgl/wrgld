@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-logr/logr"
 	authfs "github.com/wrgl/wrgl/pkg/auth/fs"
 	"github.com/wrgl/wrgl/pkg/conf"
 	conffs "github.com/wrgl/wrgl/pkg/conf/fs"
@@ -37,7 +38,7 @@ type Server struct {
 	rpSessions *server.ReceivePackSessionMap
 }
 
-func NewServer(rd *local.RepoDir, readTimeout, writeTimeout time.Duration, client *http.Client) (*Server, error) {
+func NewServer(rd *local.RepoDir, readTimeout, writeTimeout time.Duration, client *http.Client, logger logr.Logger) (*Server, error) {
 	objstore, err := rd.OpenObjectsStore()
 	if err != nil {
 		return nil, err
@@ -67,6 +68,7 @@ func NewServer(rd *local.RepoDir, readTimeout, writeTimeout time.Duration, clien
 		func(r *http.Request) conf.Store { return cs },
 		func(r *http.Request) server.UploadPackSessionStore { return s.upSessions },
 		func(r *http.Request) server.ReceivePackSessionStore { return s.rpSessions },
+		logger,
 	)
 	if c.Auth == nil {
 		return nil, fmt.Errorf("auth config not defined")
