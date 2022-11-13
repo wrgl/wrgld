@@ -289,16 +289,13 @@ func (s *Server) NewRemote(t *testing.T, pathPrefix string) (repo string, uri st
 func (s *Server) NewClient(t *testing.T, pathPrefix string, authorized bool) (string, *apiclient.Client, *RequestCaptureMiddleware, func()) {
 	t.Helper()
 	repo, url, m, cleanup := s.NewRemote(t, pathPrefix)
-	logger := testr.New(t)
-	var opts = []apiclient.ClientOption{
-		apiclient.WithLogger(&logger),
-	}
+	var opts = []apiclient.ClientOption{}
 	if authorized {
 		opts = append(opts,
 			apiclient.WithRelyingPartyToken(s.AdminToken(t)),
 		)
 	}
-	cli, err := apiclient.NewClient(url, opts...)
+	cli, err := apiclient.NewClient(url, testr.New(t), opts...)
 	require.NoError(t, err)
 	return repo, cli, m, cleanup
 }

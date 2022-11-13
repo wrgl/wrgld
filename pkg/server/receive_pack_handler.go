@@ -43,9 +43,7 @@ func (s *Server) getReceivePackSession(r *http.Request, sessions ReceivePackSess
 		ws := webhook.NewSenderWithConfig(c, s.logger, s.webhookSenderOpts...)
 		opts := make([]apiutils.ObjectReceiveOption, len(s.receiverOpts))
 		copy(opts, s.receiverOpts)
-		debugLogger := s.logger.V(1)
-		opts = append(opts, apiutils.WithReceiverDebugLogger(&debugLogger))
-		ses = NewReceivePackSession(db, rs, c, sid, ws, opts...)
+		ses = NewReceivePackSession(db, rs, c, sid, ws, s.logger.V(1), opts...)
 		sessions.Set(sid, ses)
 	}
 	return

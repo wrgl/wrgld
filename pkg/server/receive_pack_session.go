@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	"github.com/wrgl/wrgl/pkg/api"
 	"github.com/wrgl/wrgl/pkg/api/payload"
@@ -31,6 +32,7 @@ type ReceivePackSession struct {
 	id           uuid.UUID
 	receiverOpts []apiutils.ObjectReceiveOption
 	ws           *webhook.Sender
+	logger       logr.Logger
 }
 
 func parseReceivePackRequest(r *http.Request) (req *payload.ReceivePackRequest, err error) {
@@ -46,7 +48,7 @@ func parseReceivePackRequest(r *http.Request) (req *payload.ReceivePackRequest, 
 	return req, nil
 }
 
-func NewReceivePackSession(db objects.Store, rs ref.Store, c *conf.Config, id uuid.UUID, ws *webhook.Sender, receiverOpts ...apiutils.ObjectReceiveOption) *ReceivePackSession {
+func NewReceivePackSession(db objects.Store, rs ref.Store, c *conf.Config, id uuid.UUID, ws *webhook.Sender, logger logr.Logger, receiverOpts ...apiutils.ObjectReceiveOption) *ReceivePackSession {
 	s := &ReceivePackSession{
 		db:           db,
 		rs:           rs,
@@ -54,6 +56,7 @@ func NewReceivePackSession(db objects.Store, rs ref.Store, c *conf.Config, id uu
 		id:           id,
 		ws:           ws,
 		receiverOpts: receiverOpts,
+		logger:       logger.WithName("ReceivePackSession").WithValues("session_id", id.String()),
 	}
 	s.state = s.greet
 	return s
@@ -163,6 +166,7 @@ func (s *ReceivePackSession) saveRefs() error {
 }
 
 func (s *ReceivePackSession) greet(rw http.ResponseWriter, r *http.Request) (nextState stateFn) {
+	defer s.logDuration("greet")()
 	var err error
 	if v := r.Header.Get("Content-Type"); !strings.Contains(v, api.CTJSON) {
 		SendError(rw, r, http.StatusBadRequest, "updates expected")
@@ -192,7 +196,7 @@ func (s *ReceivePackSession) greet(rw http.ResponseWriter, r *http.Request) (nex
 		return s.reportStatus(rw, r)
 	}
 	if len(commits) > 0 {
-		s.receiver = apiutils.NewObjectReceiver(s.db, commits, s.receiverOpts...)
+		s.receiver = apiutils.NewObjectReceiver(s.db, commits, s.logger.V(1), s.receiverOpts...)
 		s.respondWithTableACKs(rw, r, s.negotiateTables(req))
 		return s.negotiate
 	}
@@ -214,6 +218,7 @@ func (s *ReceivePackSession) negotiateTables(req *payload.ReceivePackRequest) (a
 }
 
 func (s *ReceivePackSession) negotiate(rw http.ResponseWriter, r *http.Request) (nextState stateFn) {
+	defer s.logDuration("negotiate")()
 	ct := r.Header.Get("Content-Type")
 	if ct == api.CTPackfile {
 		return s.receiveObjects(rw, r)
@@ -231,6 +236,7 @@ func (s *ReceivePackSession) negotiate(rw http.ResponseWriter, r *http.Request) 
 }
 
 func (s *ReceivePackSession) receiveObjects(rw http.ResponseWriter, r *http.Request) (nextState stateFn) {
+	defer s.logDuration("receive objects")()
 	if v := r.Header.Get("Content-Type"); v != api.CTPackfile {
 		SendError(rw, r, http.StatusBadRequest, "packfile expected")
 		return nil
@@ -270,6 +276,7 @@ func (s *ReceivePackSession) receiveObjects(rw http.ResponseWriter, r *http.Requ
 }
 
 func (s *ReceivePackSession) reportStatus(rw http.ResponseWriter, r *http.Request) (nextState stateFn) {
+	defer s.logDuration("report status")()
 	rw.Header().Set("Content-Type", api.CTJSON)
 	// remove cookie
 	http.SetCookie(rw, &http.Cookie{
@@ -293,9 +300,17 @@ func (s *ReceivePackSession) reportStatus(rw http.ResponseWriter, r *http.Reques
 	return nil
 }
 
+func (s *ReceivePackSession) logDuration(msg string) func() {
+	start := time.Now()
+	return func() {
+		s.logger.Info(msg, "duration", time.Since(start))
+	}
+}
+
 // ServeHTTP receives, saves objects and update refs, returns true when session is
 // finished and can be removed.
 func (s *ReceivePackSession) ServeHTTP(rw http.ResponseWriter, r *http.Request) bool {
+	defer s.logDuration("serve http")()
 	s.state = s.state(rw, r)
 	return s.state == nil
 }

@@ -13,10 +13,10 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/klauspost/compress v1.15.9
 	github.com/pckhoi/uma v0.3.2
-	github.com/spf13/cobra v1.5.0
+	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
-	github.com/wrgl/wrgl v0.12.7
+	github.com/wrgl/wrgl v0.12.10
 	gopkg.in/dnaeon/go-vcr.v3 v3.1.2
 )
 

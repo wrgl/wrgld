@@ -8,12 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	apiclient "github.com/wrgl/wrgl/pkg/api/client"
 	confhelpers "github.com/wrgl/wrgl/pkg/conf/helpers"
 	"github.com/wrgl/wrgl/pkg/local"
 	"github.com/wrgl/wrgl/pkg/testutils"
@@ -51,19 +49,19 @@ func assertCmdFailed(t *testing.T, cmd *cobra.Command, output string, err error)
 	buf := bytes.NewBufferString("")
 	cmd.SetOut(buf)
 	exErr := cmd.Execute()
-	var httpErr *apiclient.HTTPError
-	if errors.As(exErr, &httpErr) {
-		t.Logf("exErr.Code: %s", spew.Sdump(httpErr.Code))
-		t.Logf("exErr.Body: %s", spew.Sdump(httpErr.Body))
-		t.Logf("exErr.RawBody: %s", spew.Sdump(httpErr.RawBody))
-	} else {
-		t.Logf("%v does not wrap http err", exErr)
-	}
-	if errors.As(err, &httpErr) {
-		t.Logf("err.Code: %s", spew.Sdump(httpErr.Code))
-		t.Logf("err.Body: %s", spew.Sdump(httpErr.Body))
-		t.Logf("err.RawBody: %s", spew.Sdump(httpErr.RawBody))
-	}
+	// var httpErr *apiclient.HTTPError
+	// if errors.As(exErr, &httpErr) {
+	// 	t.Logf("exErr.Code: %s", spew.Sdump(httpErr.Code))
+	// 	t.Logf("exErr.Body: %s", spew.Sdump(httpErr.Body))
+	// 	t.Logf("exErr.RawBody: %s", spew.Sdump(httpErr.RawBody))
+	// } else {
+	// 	t.Logf("%v does not wrap http err", exErr)
+	// }
+	// if errors.As(err, &httpErr) {
+	// 	t.Logf("err.Code: %s", spew.Sdump(httpErr.Code))
+	// 	t.Logf("err.Body: %s", spew.Sdump(httpErr.Body))
+	// 	t.Logf("err.RawBody: %s", spew.Sdump(httpErr.RawBody))
+	// }
 	assert.True(t, errors.Is(exErr, err) || exErr.Error() == err.Error(), "expecting error %q to contain error %q", exErr.Error(), err.Error())
 	assert.Equal(t, output, buf.String())
 }

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	apiclient "github.com/wrgl/wrgl/pkg/api/client"
@@ -125,7 +126,7 @@ func (s *testSuite) TestUploadPackWithDepth(t *testing.T) {
 	pr, err := cli.GetObjects([][]byte{c2.Table, c1.Table})
 	require.NoError(t, err)
 	defer pr.Close()
-	or := apiutils.NewObjectReceiver(dbc, nil)
+	or := apiutils.NewObjectReceiver(dbc, nil, testr.New(t))
 	done, err := or.Receive(pr, nil)
 	require.NoError(t, err)
 	assert.True(t, done)
