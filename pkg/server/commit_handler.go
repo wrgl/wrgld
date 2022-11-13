@@ -89,7 +89,7 @@ func (s *Server) handleCommit(rw http.ResponseWriter, r *http.Request) {
 	sorter := s.sPool.Get().(*sorter.Sorter)
 	sorter.Reset()
 	defer s.sPool.Put(sorter)
-	sum, err := ingest.IngestTable(db, sorter, f, primaryKey, s.logger.WithName("ingest"), opts...)
+	sum, err := ingest.IngestTable(db, sorter, f, primaryKey, s.logger.V(1), opts...)
 	if err != nil {
 		if v, ok := err.(*csv.ParseError); ok {
 			sendCSVError(rw, r, v)

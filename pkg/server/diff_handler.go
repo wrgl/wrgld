@@ -74,7 +74,7 @@ func (s *Server) handleDiff(rw http.ResponseWriter, r *http.Request) {
 	if !bytes.Equal(sum1, sum2) {
 		errCh := make(chan error, 10)
 		opts := []diff.DiffOption{}
-		diffChan, _ := diff.DiffTables(db, db, tbl1, tbl2, idx1, idx2, errCh, s.logger.WithName("diff"), opts...)
+		diffChan, _ := diff.DiffTables(db, db, tbl1, tbl2, idx1, idx2, errCh, s.logger.V(1), opts...)
 		for obj := range diffChan {
 			rd := &payload.RowDiff{}
 			if obj.Sum != nil {

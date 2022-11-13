@@ -292,6 +292,8 @@ github.com/subosito/gotenv v1.3.0/go.mod h1:YzJjq/33h7nrwdY+iHMhEOEEbW0ovIz0tB6t
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 github.com/vbauerster/mpb/v8 v8.1.4 h1:MOcLTIbbAA892wVjRiuFHa1nRlNvifQMDVh12Bq/xIs=
 github.com/vbauerster/mpb/v8 v8.1.4/go.mod h1:2fRME8lCLU9gwJwghZb1bO9A3Plc8KPeQ/ayGj+Ek4I=
+github.com/wrgl/wrgl v0.12.10 h1:13VDmbxqye0EkbSbIQrhN0Lreh8STUtKH8gNNe4qR5U=
+github.com/wrgl/wrgl v0.12.10/go.mod h1:JfO28VlonT9o9+cFj402ULruTQ/vQkXc8c6uR1g5LqQ=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

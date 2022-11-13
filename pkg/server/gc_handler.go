@@ -2,13 +2,10 @@ package server
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/wrgl/wrgl/pkg/prune"
 	"github.com/wrgl/wrgl/pkg/transaction"
 )
-
-const transactionTTL = time.Hour * 24 * 30
 
 func (s *Server) handleGC(rw http.ResponseWriter, r *http.Request) {
 	db := s.getDB(r)

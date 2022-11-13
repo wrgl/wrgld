@@ -82,8 +82,8 @@ $(foreach osarch,$(OS_ARCHS),$(eval $(call license_rule,$(osarch))))
 
 $(foreach osarch,$(OS_ARCHS),$(eval $(call tar_rule,$(osarch))))
 
-$(BUILD_DIR)/wrgld.image: wrgld.Dockerfile $(BUILD_DIR)/wrgld-linux-amd64/bin/wrgld $(BUILD_DIR)/wrgld-linux-amd64/LICENSE
-	$(DOCKER) build -t wrgld:latest -f wrgld.Dockerfile $(BUILD_DIR)/wrgld-linux-amd64
+$(BUILD_DIR)/wrgld.image: Dockerfile $(BUILD_DIR)/wrgld-linux-amd64/bin/wrgld $(BUILD_DIR)/wrgld-linux-amd64/LICENSE
+	$(DOCKER) build -t wrgld:latest -f Dockerfile $(BUILD_DIR)/wrgld-linux-amd64
 	$(DOCKER) tag wrgld:latest wrgld:$(VERSION)
 	$(DOCKER) images --format '{{.ID}}' wrgld:latest > $@
 
