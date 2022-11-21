@@ -55,34 +55,24 @@ func RootCmd() *cobra.Command {
 			writeTimeout := viper.GetDuration("write-timeout")
 			badgerLog := viper.GetString("badger-log")
 			proxy := viper.GetString("proxy")
-			init := viper.GetBool("init")
-			configFrom := viper.GetString("init-config-from")
+			configFile := viper.GetString("config-file")
+			var c *conf.Config
+			if configFile != "" {
+				c, err = conffs.NewStore(dir, conffs.FileSource, configFile).Open()
+				if err != nil {
+					return err
+				}
+			}
 			rd, err := local.NewRepoDir(dir, badgerLog)
 			if err != nil {
 				return err
 			}
 			defer rd.Close()
-			if init && !rd.Exist() {
+			if !rd.Exist() {
 				cmd.Printf("initializing repo at %q\n", dir)
-				var c *conf.Config
-				if configFrom != "" {
-					cs := conffs.NewStore(dir, conffs.FileSource, configFrom)
-					c, err = cs.Open()
-					if err != nil {
-						return fmt.Errorf("error reading config from %q: %v", configFrom, err)
-					}
-					cmd.Printf("read initial config from %q\n", configFrom)
-				}
 				if err = rd.Init(); err != nil {
 					return
 				}
-				if c != nil {
-					cs := conffs.NewStore(dir, conffs.LocalSource, "")
-					if err = cs.Save(c); err != nil {
-						return
-					}
-				}
-				cmd.Println("repo initialized")
 			}
 			var client *http.Client
 			if proxy != "" {
@@ -105,7 +95,7 @@ func RootCmd() *cobra.Command {
 			}
 			stdr.SetVerbosity(verbosity)
 			logger := stdr.New(log.Default())
-			server, _, _, err := NewServer(rd, client, logger, false)
+			server, _, _, err := NewServer(rd, client, c, logger, false)
 			if err != nil {
 				return
 			}
@@ -125,8 +115,7 @@ func RootCmd() *cobra.Command {
 	cmd.Flags().Duration("write-timeout", 30*time.Second, "response write timeout as described at https://pkg.go.dev/net/http#Server.WriteTimeout")
 	cmd.Flags().String("proxy", "", "make all outgoing requests through this proxy")
 	cmd.Flags().String("badger-log", "", `set Badger log level, valid options are "error", "warning", "debug", and "info" (defaults to "error")`)
-	cmd.Flags().Bool("init", false, "initialize repo at WRGL_DIR if not already initialized")
-	cmd.Flags().String("init-config-from", "", "initialize repo with initial config from this location")
+	cmd.Flags().String("config-file", "", "read config from file")
 	cmd.Flags().Int("log-verbosity", 0, "verbosity level. Higher means more logs")
 	viper.BindPFlags(cmd.Flags())
 	viper.SetEnvPrefix("wrgld")

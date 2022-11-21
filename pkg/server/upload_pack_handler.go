@@ -33,11 +33,7 @@ func (s *Server) getUploadPackSession(r *http.Request, sessions UploadPackSessio
 		}
 		db := s.getDB(r)
 		rs := s.getRS(r)
-		cs := s.getConfS(r)
-		c, err := cs.Open()
-		if err != nil {
-			panic(err)
-		}
+		c := s.getConfig(r)
 		ses = NewUploadPackSession(db, rs, sid, c.MaxPackFileSize())
 		sessions.Set(sid, ses)
 	}

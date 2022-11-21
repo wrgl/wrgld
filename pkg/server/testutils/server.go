@@ -99,8 +99,11 @@ func NewServer(t *testing.T, rootPath *regexp.Regexp, opts ...server.ServerOptio
 		func(r *http.Request) ref.Store {
 			return ts.GetRS(getRepo(r))
 		},
-		func(r *http.Request) conf.Store {
-			return ts.GetConfS(getRepo(r))
+		func(r *http.Request) conf.Config {
+			cs := ts.GetConfS(getRepo(r))
+			c, err := cs.Open()
+			require.NoError(t, err)
+			return *c
 		},
 		func(r *http.Request) server.UploadPackSessionStore {
 			return ts.GetUpSessions(getRepo(r))

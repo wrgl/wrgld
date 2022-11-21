@@ -50,7 +50,7 @@ func (s *Server) handleUpdateTransaction(rw http.ResponseWriter, r *http.Request
 		if err != nil {
 			panic(err)
 		}
-		ws, err := webhook.NewSender(s.getConfS(r), s.logger, s.webhookSenderOpts...)
+		ws, err := webhook.NewSender(s.getConfig(r), s.logger, s.webhookSenderOpts...)
 		if err != nil {
 			panic(err)
 		}

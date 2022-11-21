@@ -38,16 +38,18 @@ type Server struct {
 	rpSessions *server.ReceivePackSessionMap
 }
 
-func NewServer(rd *local.RepoDir, client *http.Client, logger logr.Logger, disableTokenExpirationCheck bool) (*Server, *uma.KeycloakProvider, string, error) {
+func NewServer(rd *local.RepoDir, client *http.Client, c *conf.Config, logger logr.Logger, disableTokenExpirationCheck bool) (*Server, *uma.KeycloakProvider, string, error) {
 	objstore, err := rd.OpenObjectsStore()
 	if err != nil {
 		return nil, nil, "", err
 	}
 	refstore := rd.OpenRefStore()
-	cs := conffs.NewStore(rd.FullPath, conffs.AggregateSource, "")
-	c, err := cs.Open()
-	if err != nil {
-		return nil, nil, "", err
+	if c == nil {
+		cs := conffs.NewStore(rd.FullPath, conffs.AggregateSource, "")
+		c, err = cs.Open()
+		if err != nil {
+			return nil, nil, "", err
+		}
 	}
 	s := &Server{
 		upSessions: server.NewUploadPackSessionMap(0, 0),
@@ -129,7 +131,7 @@ func NewServer(rd *local.RepoDir, client *http.Client, logger logr.Logger, disab
 		nil,
 		func(r *http.Request) objects.Store { return objstore },
 		func(r *http.Request) ref.Store { return refstore },
-		func(r *http.Request) conf.Store { return cs },
+		func(r *http.Request) conf.Config { return *c },
 		func(r *http.Request) server.UploadPackSessionStore { return s.upSessions },
 		func(r *http.Request) server.ReceivePackSessionStore { return s.rpSessions },
 		logger,

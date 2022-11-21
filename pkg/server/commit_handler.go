@@ -132,7 +132,7 @@ func (s *Server) handleCommit(rw http.ResponseWriter, r *http.Request) {
 		if err = ref.CommitHead(rs, branch, commitSum, commit, nil); err != nil {
 			panic(err)
 		}
-		ws, err := webhook.NewSender(s.getConfS(r), s.logger, s.webhookSenderOpts...)
+		ws, err := webhook.NewSender(s.getConfig(r), s.logger, s.webhookSenderOpts...)
 		if err != nil {
 			panic(err)
 		}

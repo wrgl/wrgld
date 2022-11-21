@@ -83,7 +83,7 @@ type PostCommitHook func(r *http.Request, commit *objects.Commit, sum []byte, br
 type Server struct {
 	getDB             func(r *http.Request) objects.Store
 	getRS             func(r *http.Request) ref.Store
-	getConfS          func(r *http.Request) conf.Store
+	getConfig         func(r *http.Request) conf.Config
 	getUpSession      func(r *http.Request) UploadPackSessionStore
 	getRPSession      func(r *http.Request) ReceivePackSessionStore
 	postCommit        PostCommitHook
@@ -99,7 +99,7 @@ func NewServer(
 	rootPath *regexp.Regexp,
 	getDB func(r *http.Request) objects.Store,
 	getRS func(r *http.Request) ref.Store,
-	getConfS func(r *http.Request) conf.Store,
+	getConfS func(r *http.Request) conf.Config,
 	getUpSession func(r *http.Request) UploadPackSessionStore,
 	getRPSession func(r *http.Request) ReceivePackSessionStore,
 	logger logr.Logger,
@@ -108,7 +108,7 @@ func NewServer(
 	s := &Server{
 		getDB:        getDB,
 		getRS:        getRS,
-		getConfS:     getConfS,
+		getConfig:    getConfS,
 		getUpSession: getUpSession,
 		getRPSession: getRPSession,
 		maxAge:       90 * 24 * time.Hour,

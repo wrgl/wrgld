@@ -20,7 +20,7 @@ func TestSender(t *testing.T) {
 	wg := &sync.WaitGroup{}
 
 	// test zero webhook registered
-	s := webhook.NewSenderWithConfig(&conf.Config{}, logger, webhook.WithWaitGroup(wg))
+	s := webhook.NewSenderWithConfig(conf.Config{}, logger, webhook.WithWaitGroup(wg))
 	s.Flush()
 	wg.Wait()
 
@@ -31,7 +31,7 @@ func TestSender(t *testing.T) {
 	defer cleanup()
 	wh3, pl3, cleanup := webhooktest.CreateWebhookHandler(t, []conf.WebhookEventType{conf.CommitEventType, conf.RefUpdateEventType}, true)
 	defer cleanup()
-	s = webhook.NewSenderWithConfig(&conf.Config{
+	s = webhook.NewSenderWithConfig(conf.Config{
 		Webhooks: []conf.Webhook{wh1, wh2, wh3},
 	}, logger, webhook.WithWaitGroup(wg))
 	s.Flush()
@@ -41,7 +41,7 @@ func TestSender(t *testing.T) {
 	assert.Nil(t, pl3())
 
 	// test enqueue commit event
-	s = webhook.NewSenderWithConfig(&conf.Config{
+	s = webhook.NewSenderWithConfig(conf.Config{
 		Webhooks: []conf.Webhook{wh1, wh2, wh3},
 	}, logger, webhook.WithWaitGroup(wg))
 	ce := &webhook.CommitEvent{
@@ -74,7 +74,7 @@ func TestSender(t *testing.T) {
 	})
 
 	// test enqueue ref update event
-	s = webhook.NewSenderWithConfig(&conf.Config{
+	s = webhook.NewSenderWithConfig(conf.Config{
 		Webhooks: []conf.Webhook{wh1, wh2, wh3},
 	}, logger, webhook.WithWaitGroup(wg))
 	ue := &webhook.RefUpdateEvent{
@@ -102,7 +102,7 @@ func TestSender(t *testing.T) {
 	})
 
 	// test enqueue multiple events
-	s = webhook.NewSenderWithConfig(&conf.Config{
+	s = webhook.NewSenderWithConfig(conf.Config{
 		Webhooks: []conf.Webhook{wh1, wh2, wh3},
 	}, logger, webhook.WithWaitGroup(wg))
 	s.EnqueueEvent(ce)

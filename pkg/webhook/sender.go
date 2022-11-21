@@ -33,16 +33,12 @@ func WithWaitGroup(wg *sync.WaitGroup) SenderOption {
 	}
 }
 
-func NewSender(cs conf.Store, logger logr.Logger, opts ...SenderOption) (*Sender, error) {
-	c, err := cs.Open()
-	if err != nil {
-		return nil, err
-	}
+func NewSender(c conf.Config, logger logr.Logger, opts ...SenderOption) (*Sender, error) {
 	s := NewSenderWithConfig(c, logger, opts...)
 	return s, nil
 }
 
-func NewSenderWithConfig(c *conf.Config, logger logr.Logger, opts ...SenderOption) *Sender {
+func NewSenderWithConfig(c conf.Config, logger logr.Logger, opts ...SenderOption) *Sender {
 	s := &Sender{
 		webhooks: make([]*conf.Webhook, len(c.Webhooks)),
 		events:   map[conf.WebhookEventType][]Event{},

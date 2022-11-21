@@ -69,11 +69,10 @@ func newTestServer(t *testing.T, rd *local.RepoDir, cassetteName string, updateV
 	handler := &wrappedHandler{}
 	ts := httptest.NewServer(handler)
 	c.BaseURL = ts.URL
-	require.NoError(t, cs.Save(c))
 	logger := testr.NewWithOptions(t, testr.Options{
 		Verbosity: 1,
 	})
-	srv, kp, resourceID, err := wrgldcmd.NewServer(rd, rec.GetDefaultClient(), logger, true)
+	srv, kp, resourceID, err := wrgldcmd.NewServer(rd, rec.GetDefaultClient(), c, logger, true)
 	require.NoError(t, err)
 	handler.h = srv
 
