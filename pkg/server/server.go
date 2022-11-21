@@ -250,6 +250,10 @@ func NewServer(
 	return s
 }
 
+func (s *Server) Ready() bool {
+	return true
+}
+
 func (s *Server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(rw, r)
 }

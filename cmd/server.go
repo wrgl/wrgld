@@ -16,6 +16,7 @@ import (
 	"github.com/wrgl/wrgl/pkg/objects"
 	"github.com/wrgl/wrgl/pkg/ref"
 	wrgldoapiserver "github.com/wrgl/wrgld/pkg/oapi/server"
+	"github.com/wrgl/wrgld/pkg/probes"
 	"github.com/wrgl/wrgld/pkg/server"
 	wrgldutils "github.com/wrgl/wrgld/pkg/utils"
 )
@@ -127,7 +128,7 @@ func NewServer(rd *local.RepoDir, client *http.Client, c *conf.Config, logger lo
 		}
 		resourceID = resp.ID
 	}
-	var handler http.Handler = server.NewServer(
+	srv := server.NewServer(
 		nil,
 		func(r *http.Request) objects.Store { return objstore },
 		func(r *http.Request) ref.Store { return refstore },
@@ -136,8 +137,9 @@ func NewServer(rd *local.RepoDir, client *http.Client, c *conf.Config, logger lo
 		func(r *http.Request) server.ReceivePackSessionStore { return s.rpSessions },
 		logger,
 	)
+	go probes.StartServer(srv)
 	s.handler = wrgldutils.ApplyMiddlewares(
-		handler,
+		srv,
 		umaMan.Middleware,
 		LoggingMiddleware(logger),
 		RecoveryMiddleware(logger),
