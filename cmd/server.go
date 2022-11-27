@@ -109,7 +109,6 @@ func NewServer(rd *local.RepoDir, client *http.Client, c *conf.Config, logger lo
 			rw.WriteHeader(http.StatusUnauthorized)
 			rw.Write([]byte(`{"message":"Unauthorized"}`))
 		},
-		Logger:                      &umaLogger,
 		DisableTokenExpirationCheck: disableTokenExpirationCheck,
 	}
 	if c.Auth.AnonymousRead {
@@ -117,7 +116,7 @@ func NewServer(rd *local.RepoDir, client *http.Client, c *conf.Config, logger lo
 			return []string{"read"}
 		}
 	}
-	umaMan := wrgldoapiserver.UMAManager(*manOpts)
+	umaMan := wrgldoapiserver.UMAManager(*manOpts, umaLogger)
 
 	var resourceID string
 	resourceID, err = rs.Get(c.Auth.RepositoryName)

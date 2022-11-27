@@ -258,7 +258,7 @@ func (s *Server) NewRemote(t *testing.T, pathPrefix string) (repo string, uri st
 			rw.WriteHeader(http.StatusUnauthorized)
 			rw.Write([]byte(`{"message":"Unauthorized"}`))
 		},
-	})
+	}, testr.New(t))
 	var handler http.Handler = ApplyMiddlewares(
 		m,
 		func(h http.Handler) http.Handler {

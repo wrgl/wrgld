@@ -1,6 +1,7 @@
 package wrgldoapiserver
 
 import (
+	"github.com/go-logr/logr"
 	"github.com/pckhoi/uma"
 )
 
@@ -116,7 +117,7 @@ var umaPaths = []uma.Path{
 }
 
 // UMAManager returns an uma.Manager instance configured according to OpenAPI schema
-func UMAManager(opts uma.ManagerOptions) *uma.Manager {
+func UMAManager(opts uma.ManagerOptions, logger logr.Logger) *uma.Manager {
 	return uma.New(
 		opts,
 		UMAResourceTypes,
@@ -124,5 +125,6 @@ func UMAManager(opts uma.ManagerOptions) *uma.Manager {
 		umaDefaultResource,
 		umaDefaultSecurity,
 		umaPaths,
+		logger,
 	)
 }
