@@ -10,6 +10,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-logr/logr"
 	"github.com/pckhoi/uma"
+	"github.com/rs/cors"
 	"github.com/wrgl/wrgl/pkg/conf"
 	"github.com/wrgl/wrgl/pkg/local"
 	"github.com/wrgl/wrgl/pkg/objects"
@@ -136,6 +137,17 @@ func NewServer(rd *local.RepoDir, client *http.Client, c *conf.Config, logger lo
 		LoggingMiddleware(logger),
 		RecoveryMiddleware(logger),
 	)
+	if c.Cors != nil && len(c.Cors.AllowedOrigins) > 0 {
+		corsOpts := cors.Options{
+			AllowedOrigins:   c.Cors.AllowedOrigins,
+			AllowedHeaders:   []string{"*"},
+			AllowCredentials: true,
+			ExposedHeaders:   []string{"Www-Authenticate"},
+		}
+		logger.Info("enable cors", "options", corsOpts)
+		c := cors.New(corsOpts)
+		s.handler = c.Handler(s.handler)
+	}
 	return s, kp, resourceID, nil
 }
 
