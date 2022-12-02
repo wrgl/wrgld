@@ -11,7 +11,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pckhoi/uma"
 	"github.com/wrgl/wrgl/pkg/conf"
-	conffs "github.com/wrgl/wrgl/pkg/conf/fs"
 	"github.com/wrgl/wrgl/pkg/local"
 	"github.com/wrgl/wrgl/pkg/objects"
 	"github.com/wrgl/wrgl/pkg/ref"
@@ -45,13 +44,6 @@ func NewServer(rd *local.RepoDir, client *http.Client, c *conf.Config, logger lo
 		return nil, nil, "", err
 	}
 	refstore := rd.OpenRefStore()
-	if c == nil {
-		cs := conffs.NewStore(rd.FullPath, conffs.AggregateSource, "")
-		c, err = cs.Open()
-		if err != nil {
-			return nil, nil, "", err
-		}
-	}
 	s := &Server{
 		upSessions: server.NewUploadPackSessionMap(0, 0),
 		rpSessions: server.NewReceivePackSessionMap(0, 0),
@@ -59,12 +51,6 @@ func NewServer(rd *local.RepoDir, client *http.Client, c *conf.Config, logger lo
 			func() { rd.Close() },
 			func() { objstore.Close() },
 		},
-	}
-	if c.Auth == nil || c.Auth.Keycloak == nil {
-		return nil, nil, "", fmt.Errorf("auth config not defined")
-	}
-	if c.Auth.RepositoryName == "" {
-		return nil, nil, "", fmt.Errorf("auth.repositoryName not defined")
 	}
 	rs := rd.OpenUMAStore()
 	kc := c.Auth.Keycloak
@@ -121,11 +107,18 @@ func NewServer(rd *local.RepoDir, client *http.Client, c *conf.Config, logger lo
 	var resourceID string
 	resourceID, err = rs.Get(c.Auth.RepositoryName)
 	if err != nil {
-		resp, err := umaMan.RegisterResourceAt(nil, rs, kp, *baseURL, "/refs")
-		if err != nil {
-			return nil, nil, "", err
+		if kc.ResourceID != "" {
+			if err := rs.Set(c.Auth.RepositoryName, kc.ResourceID); err != nil {
+				return nil, nil, "", fmt.Errorf("error setting resource id: %w", err)
+			}
+			resourceID = kc.ResourceID
+		} else {
+			resp, err := umaMan.RegisterResourceAt(nil, rs, kp, *baseURL, "")
+			if err != nil {
+				return nil, nil, "", err
+			}
+			resourceID = resp.ID
 		}
-		resourceID = resp.ID
 	}
 	srv := server.NewServer(
 		nil,

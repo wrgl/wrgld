@@ -37,6 +37,7 @@ func RootCmd() *cobra.Command {
 		Version: version,
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			logger := stdr.New(log.Default())
 			var dir string
 			if len(args) > 0 {
 				dir = args[0]
@@ -48,33 +49,48 @@ func RootCmd() *cobra.Command {
 				if dir == "" {
 					return fmt.Errorf("repository not initialized in current directory. Initialize with command:\n  wrgl init")
 				}
-				log.Printf("repository found at %s\n", dir)
+				logger.Info("repository found", "directory", dir)
 			}
-			port := viper.GetInt("port")
-			readTimeout := viper.GetDuration("read-timeout")
-			writeTimeout := viper.GetDuration("write-timeout")
 			badgerLog := viper.GetString("badger-log")
-			proxy := viper.GetString("proxy")
-			configFile := viper.GetString("config-file")
-			var c *conf.Config
-			if configFile != "" {
-				c, err = conffs.NewStore(dir, conffs.FileSource, configFile).Open()
-				if err != nil {
-					return err
-				}
-			}
 			rd, err := local.NewRepoDir(dir, badgerLog)
 			if err != nil {
 				return err
 			}
 			defer rd.Close()
 			if !rd.Exist() {
-				cmd.Printf("initializing repo at %q\n", dir)
 				if err = rd.Init(); err != nil {
 					return
 				}
+				logger.Info("initialized repo", "directory", dir)
 			}
+
+			var c *conf.Config
+			configFile := viper.GetString("config-file")
+			if configFile != "" {
+				c, err = conffs.NewStore(dir, conffs.FileSource, configFile).Open()
+				if err != nil {
+					return err
+				}
+			} else {
+				cs := conffs.NewStore(rd.FullPath, conffs.AggregateSource, "")
+				c, err = cs.Open()
+				if err != nil {
+					return err
+				}
+			}
+			if c.Auth == nil || c.Auth.Keycloak == nil {
+				return fmt.Errorf("auth config not defined")
+			}
+			if c.Auth.RepositoryName == "" {
+				return fmt.Errorf("auth.repositoryName not defined")
+			}
+
+			if s := viper.GetString("resource-id"); s != "" {
+				c.Auth.Keycloak.ResourceID = s
+			}
+
 			var client *http.Client
+			proxy := viper.GetString("proxy")
 			if proxy != "" {
 				proxyURL, err := url.Parse(proxy)
 				if err != nil {
@@ -94,12 +110,14 @@ func RootCmd() *cobra.Command {
 				return
 			}
 			stdr.SetVerbosity(verbosity)
-			logger := stdr.New(log.Default())
 			server, _, _, err := NewServer(rd, client, c, logger, false)
 			if err != nil {
 				return
 			}
 			defer server.Close()
+			readTimeout := viper.GetDuration("read-timeout")
+			writeTimeout := viper.GetDuration("write-timeout")
+			port := viper.GetInt("port")
 			srv := &http.Server{
 				ReadTimeout:  readTimeout,
 				WriteTimeout: writeTimeout,
@@ -117,6 +135,7 @@ func RootCmd() *cobra.Command {
 	cmd.Flags().String("badger-log", "", `set Badger log level, valid options are "error", "warning", "debug", and "info" (defaults to "error")`)
 	cmd.Flags().String("config-file", "", "read config from file")
 	cmd.Flags().Int("log-verbosity", 0, "verbosity level. Higher means more logs")
+	cmd.Flags().String("resource-id", "", "UMA resource id created in keycloak. If not given, the server will attempt to create the resource when authorization is required.")
 	viper.BindPFlags(cmd.Flags())
 	viper.SetEnvPrefix("wrgld")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))

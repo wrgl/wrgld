@@ -45,8 +45,6 @@ paths:
           $ref: "#/components/responses/createTransaction"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -62,8 +60,6 @@ paths:
           $ref: "#/components/responses/getTransaction"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -88,8 +84,6 @@ paths:
           $ref: "#/components/responses/noContent"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -129,8 +123,6 @@ paths:
           $ref: "#/components/responses/getRefs"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -154,8 +146,6 @@ paths:
                 $ref: "#/components/schemas/commit"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -194,8 +184,6 @@ paths:
           $ref: "#/components/responses/createCommit"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -216,8 +204,6 @@ paths:
           $ref: "#/components/responses/getCommitTree"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -233,8 +219,6 @@ paths:
           $ref: "#/components/responses/getCommit"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -254,8 +238,6 @@ paths:
                 $ref: "#/components/schemas/tableProfile"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -287,8 +269,6 @@ paths:
                 $ref: "#/components/schemas/diff"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -312,8 +292,6 @@ paths:
                 $ref: "#/components/schemas/tablePayload"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -334,8 +312,6 @@ paths:
                 $ref: "#/components/schemas/tableProfile"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -363,8 +339,6 @@ paths:
           $ref: "#/components/responses/getBlocks"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -389,8 +363,6 @@ paths:
           $ref: "#/components/responses/getRows"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -416,8 +388,6 @@ paths:
           $ref: "#/components/responses/getBlocks"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -440,8 +410,6 @@ paths:
           $ref: "#/components/responses/getRows"
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
         "4XX":
           $ref: "#/components/responses/errorResponse"
         "5XX":
@@ -474,18 +442,26 @@ paths:
                 format: binary
         "401":
           $ref: "#/components/responses/unauthorized"
-        "403":
-          $ref: "#/components/responses/forbidden"
   /upload-pack:
     post:
       operationId: uploadPack
       summary: Fetch latest updates
+      responses:
+        "200":
+          description: OK
+        "401":
+          $ref: "#/components/responses/unauthorized"
   /receive-pack:
     post:
       operationId: receivePack
       summary: Receive updates
       security:
         - oidc: [write]
+      responses:
+        "200":
+          description: OK
+        "401":
+          $ref: "#/components/responses/unauthorized"
 components:
   securitySchemes:
     oidc:
