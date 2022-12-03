@@ -105,9 +105,9 @@ func RootCmd() *cobra.Command {
 					Transport: transport,
 				}
 			}
-			verbosity, err := cmd.LocalFlags().GetInt("log-verbosity")
-			if err != nil {
-				return
+			verbosity := viper.GetInt("log-verbosity")
+			if verbosity > 0 {
+				logger.Info("log verbosity", "v", verbosity)
 			}
 			stdr.SetVerbosity(verbosity)
 			server, _, _, err := NewServer(rd, client, c, logger, false)

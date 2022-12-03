@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/pckhoi/uma"
+	"github.com/wrgl/wrgld/pkg/server"
 )
 
 type loggingMiddleware struct {
@@ -50,5 +52,20 @@ func (h *recoveryMiddleware) ServeHTTP(rw http.ResponseWriter, r *http.Request) 
 func RecoveryMiddleware(logger logr.Logger) func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return &recoveryMiddleware{handler: handler, logger: logger}
+	}
+}
+
+func SetAuthorMiddleware(logger logr.Logger) func(handler http.Handler) http.Handler {
+	return func(handler http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			claims := uma.GetClaims(r)
+			if claims != nil {
+				r = server.SetAuthor(r, &server.Author{
+					Email: claims.Email,
+					Name:  claims.Name,
+				})
+			}
+			handler.ServeHTTP(w, r)
+		})
 	}
 }

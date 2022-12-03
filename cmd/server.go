@@ -68,6 +68,7 @@ func NewServer(rd *local.RepoDir, client *http.Client, c *conf.Config, logger lo
 		kc.ClientID,
 		kc.ClientSecret,
 		oidc.NewRemoteKeySet(ctx, kc.Issuer+"/protocol/openid-connect/certs"),
+		logger.WithName("KeycloakProvider").V(1),
 		opts...,
 	)
 	if err != nil {
@@ -133,6 +134,7 @@ func NewServer(rd *local.RepoDir, client *http.Client, c *conf.Config, logger lo
 	go probes.StartServer(srv)
 	s.handler = wrgldutils.ApplyMiddlewares(
 		srv,
+		SetAuthorMiddleware(logger),
 		umaMan.Middleware,
 		LoggingMiddleware(logger),
 		RecoveryMiddleware(logger),

@@ -23,6 +23,7 @@ import (
 func (s *Server) handleCommit(rw http.ResponseWriter, r *http.Request) {
 	author := GetAuthor(r)
 	if author == nil {
+		s.logger.Info("author not set")
 		SendHTTPError(rw, r, http.StatusUnauthorized)
 		return
 	}
