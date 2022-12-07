@@ -286,6 +286,8 @@ github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f/go.mod h1:qRW
 github.com/orisano/pixelmatch v0.0.0-20220722002657-fb0b55479cde h1:x0TT0RDC7UhAVbbWWBzr41ElhJx5tXPWkIHA2HWPRuw=
 github.com/pckhoi/meow v0.0.0-20211009023351-e1fff1d3c870 h1:0NDfF1L76RfwUnynO8bPg3NM9HSxvFfI0ULGBzIpLMU=
 github.com/pckhoi/meow v0.0.0-20211009023351-e1fff1d3c870/go.mod h1:f6wtIKwBWDl7Q3pavevwQbwasOADIcyBtdXBRWgpLJ8=
+github.com/pckhoi/uma v0.4.1 h1:lXcd1MzSAm6bv5EhpAXjRcOZ69J6UmePPVTBgRkEt5g=
+github.com/pckhoi/uma v0.4.1/go.mod h1:z+mvDIQXMg3QNOvUxPLKGz5nlFs06FNO5mkwW4WccaM=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/pelletier/go-toml v1.9.5 h1:4yBQzkHv+7BHq2PQUZF3Mx0IYxG7LsP222s7Agd3ve8=
 github.com/pelletier/go-toml v1.9.5/go.mod h1:u1nR/EPcESfeI/szUZKdtJ0xRNbUoANCkoOuaOx1Y+c=
@@ -327,8 +329,8 @@ github.com/prometheus/procfs v0.8.0/go.mod h1:z7EfXMXOkbkqb9IINtpCn86r/to3BnA0ua
 github.com/rivo/tview v0.0.0-20220812085834-0e6b21a48e96 h1:O435d1KIgG6KxpP7NDdmj7SdaLIzq4F+PG8ZB/BHC4c=
 github.com/rivo/tview v0.0.0-20220812085834-0e6b21a48e96/go.mod h1:hyzpnqn4KWzZopTEjL1AxvlzOLMH1IuKo4lTw6vyOQc=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
-github.com/rivo/uniseg v0.3.4 h1:3Z3Eu6FGHZWSfNKJTOUiPatWwfc7DzJRU04jFUqJODw=
-github.com/rivo/uniseg v0.3.4/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
+github.com/rivo/uniseg v0.4.3 h1:utMvzDsuh3suAEnhH0RdHmoPbU648o6CvXxTx4SBMOw=
+github.com/rivo/uniseg v0.4.3/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.8.0 h1:FCbCCtXNOY3UtUuHUYaghJg4y7Fd14rXifAYUAtL9R8=
 github.com/rs/cors v1.8.2 h1:KCooALfAYGs415Cwu5ABvv9n9509fSiG5SQJn/AQo4U=
@@ -376,6 +378,8 @@ github.com/subosito/gotenv v1.4.0/go.mod h1:mZd6rFysKEcUhUHXJk0C/08wAgyDBFuwEYL7
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 github.com/vbauerster/mpb/v8 v8.1.4 h1:MOcLTIbbAA892wVjRiuFHa1nRlNvifQMDVh12Bq/xIs=
 github.com/vbauerster/mpb/v8 v8.1.4/go.mod h1:2fRME8lCLU9gwJwghZb1bO9A3Plc8KPeQ/ayGj+Ek4I=
+github.com/wrgl/wrgl v0.13.0 h1:PxnX06dzK0NpTIagualgj+NKhuax/DcR2eCZ5tcr0E4=
+github.com/wrgl/wrgl v0.13.0/go.mod h1:Su+NfiMnXKM6Ed4ilT9URGFn7jqQD17oBNCVMHsjGVk=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

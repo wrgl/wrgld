@@ -6,17 +6,18 @@ require (
 	github.com/brianvoe/gofakeit/v6 v6.18.0
 	github.com/chromedp/chromedp v0.8.5
 	github.com/coreos/go-oidc/v3 v3.2.0
-	github.com/davecgh/go-spew v1.1.1
 	github.com/go-logr/logr v1.2.3
 	github.com/go-logr/stdr v1.2.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/klauspost/compress v1.15.9
-	github.com/pckhoi/uma v0.4.0
+	github.com/pckhoi/uma v0.4.1
+	github.com/prometheus/client_golang v1.14.0
+	github.com/rs/cors v1.8.2
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
-	github.com/wrgl/wrgl v0.12.10
+	github.com/wrgl/wrgl v0.13.0
 	gopkg.in/dnaeon/go-vcr.v3 v3.1.2
 )
 
@@ -28,6 +29,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/chromedp/cdproto v0.0.0-20220827030233-358ed4af73cf // indirect
 	github.com/chromedp/sysutil v1.0.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgraph-io/badger/v3 v3.2103.2 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
@@ -64,13 +66,11 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/rivo/tview v0.0.0-20220812085834-0e6b21a48e96 // indirect
-	github.com/rivo/uniseg v0.3.4 // indirect
-	github.com/rs/cors v1.8.2 // indirect
+	github.com/rivo/uniseg v0.4.3 // indirect
 	github.com/spf13/afero v1.9.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
@@ -90,9 +90,4 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-)
-
-replace (
-	github.com/pckhoi/uma => ../uma
-	github.com/wrgl/wrgl => ../wrgl
 )
