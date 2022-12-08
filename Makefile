@@ -13,11 +13,14 @@ IMAGES := $(BUILD_DIR)/wrgld.image
 WRGLD_STATIC_ASSETS := $(wildcard wrgld/pkg/auth/oauth2/static/*) $(wildcard wrgld/pkg/auth/oauth2/templates/*)
 COMMON_LDFLAGS = -X github.com/wrgl/wrgld/cmd.version=$(VERSION)
 
-.PHONY: all clean images
+.PHONY: all clean images push
 all: $(WRGLD_TAR_FILES)
 images: $(IMAGES)
 clean:
 	rm -rf $(BUILD_DIR)
+push: images
+	$(DOCKER) push wrgl/wrgld:$(VERSION)
+	$(DOCKER) push wrgl/wrgld:latest
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
@@ -83,9 +86,9 @@ $(foreach osarch,$(OS_ARCHS),$(eval $(call license_rule,$(osarch))))
 $(foreach osarch,$(OS_ARCHS),$(eval $(call tar_rule,$(osarch))))
 
 $(BUILD_DIR)/wrgld.image: Dockerfile $(BUILD_DIR)/wrgld-linux-amd64/bin/wrgld $(BUILD_DIR)/wrgld-linux-amd64/LICENSE
-	$(DOCKER) build -t wrgld:latest -f Dockerfile $(BUILD_DIR)/wrgld-linux-amd64
-	$(DOCKER) tag wrgld:latest wrgld:$(VERSION)
-	$(DOCKER) images --format '{{.ID}}' wrgld:latest > $@
+	$(DOCKER) build -t wrgl/wrgld:latest -f Dockerfile $(BUILD_DIR)/wrgld-linux-amd64
+	$(DOCKER) tag wrgl/wrgld:latest wrgl/wrgld:$(VERSION)
+	$(DOCKER) images --format '{{.ID}}' wrgl/wrgld:latest > $@
 
 $(BUILD_DIR): ; @-mkdir $@ 2>/dev/null
 $(MD5_DIR): | $(BUILD_DIR) ; @-mkdir $@ 2>/dev/null
