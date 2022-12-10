@@ -133,7 +133,7 @@ func (s *testServer) GetCurrentToken(t *testing.T) []byte {
 	require.NoError(t, err)
 	u, err := url.Parse(s.URL)
 	require.NoError(t, err)
-	tok := cs.GetTokenMatching(*u)
+	tok := cs.GetRPT(*u)
 	require.NotEmpty(t, tok)
 	return []byte(tok)
 }

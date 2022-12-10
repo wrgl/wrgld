@@ -35,7 +35,7 @@ func authenticate(t *testing.T, ts *server_testutils.Server, uri string, scopes 
 	}
 	u, err := url.Parse(uri)
 	require.NoError(t, err)
-	cs.Set(*u, tok)
+	cs.SetRPT(*u, tok)
 	require.NoError(t, cs.Flush())
 }
 
@@ -45,7 +45,7 @@ func unauthenticate(t *testing.T, uri string) {
 	require.NoError(t, err)
 	u, err := url.Parse(uri)
 	require.NoError(t, err)
-	cs.Delete(*u)
+	cs.DeleteRepo(*u)
 	require.NoError(t, cs.Flush())
 }
 
