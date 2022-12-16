@@ -2,6 +2,7 @@ package e2e_wrgl_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/wrgl/wrgl/cmd/wrgl/utils"
 	confhelpers "github.com/wrgl/wrgl/pkg/conf/helpers"
 	"github.com/wrgl/wrgl/pkg/local"
 	"github.com/wrgl/wrgl/pkg/testutils"
@@ -79,7 +81,6 @@ func TestCredAuthCmd(t *testing.T) {
 	require.NoError(t, cmd.Execute())
 
 	ts.RunAuthenticate(t, "credentials", "print", "origin")
-	rpt := ts.GetCurrentToken(t)
 
 	cmd = rootCmd()
 	cmd.SetArgs([]string{"credentials", "list"})
@@ -96,11 +97,11 @@ func TestCredAuthCmd(t *testing.T) {
 	cmd.SetArgs([]string{"credentials", "list"})
 	assertCmdOutput(t, cmd, "")
 
-	tokFile := filepath.Join(t.TempDir(), "tok.txt")
-	require.NoError(t, os.WriteFile(tokFile, []byte(rpt), 0644))
+	secretFile := filepath.Join(t.TempDir(), "tok.txt")
+	require.NoError(t, os.WriteFile(secretFile, []byte("change-me"), 0644))
 	cmd = rootCmd()
-	cmd.SetArgs([]string{"credentials", "authenticate", ts.URL, tokFile})
-	require.NoError(t, cmd.Execute())
+	cmd.SetArgs([]string{"credentials", "authenticate", ts.URL, "wrgld", secretFile})
+	require.NoError(t, cmd.ExecuteContext(utils.SetClient(context.Background(), ts.Client)))
 
 	cmd = rootCmd()
 	cmd.SetArgs([]string{"credentials", "list"})
